@@ -28,4 +28,17 @@ describe('MotionProcessor', () => {
     expect(right.x).toBeGreaterThan(0)
     expect(forward.y).toBeGreaterThan(0)
   })
+
+  it('公开相对运动映射与 GameInput 方向保持一致', () => {
+    const processor = new MotionProcessor()
+    processor.startCalibration(300)
+    processor.process(frame(0, 0, 1000), true)
+    processor.process(frame(0, 0, 1300), true)
+
+    const right = processor.getRelativeMotion(frame(0, 10, 1320))
+    const forward = processor.getRelativeMotion(frame(-10, 0, 1340))
+
+    expect(right.horizontalDeg).toBe(10)
+    expect(forward.verticalDeg).toBe(10)
+  })
 })

@@ -1,114 +1,53 @@
-# BS-BT91 康复交互游戏 V0.1
+# BS-BT91 康复交互游戏 V0.3
 
-这是按照当前开发主线落地的第一版实机工程：
+V0.3 在已完成实机验证的 TargetReach 训练基础上，加入个体化 ROM、BLE 恢复和本地训练历史：
 
 ```text
-BS-BT91
-  ↓ BLE
-Tauri Windows
-  ↓
-FrameAssembler
-  ↓
-BsBt91Parser
-  ↓
-MotionProcessor
-  ↓
-GameInput
-  ↓
-PixiJS Ball Demo
+BS-BT91 → BLE 自动恢复 → 中心 Zero → MotionProfile
+→ MotionProcessor → GameInput → IRehabGame
+→ TargetReachGame → TrainingRecord → History
 ```
 
-## 当前已经实现
+## 当前能力
 
-- Vue3 + TypeScript + Vite 工程。
-- PixiJS v8 小球交互 Demo。
-- Tauri v2 Windows 桌面壳。
-- Rust `btleplug` BLE Central 接入。
-- 扫描名称包含 `BS` 的 BLE 设备。
-- 连接目标设备并校验 FFE5 Service。
-- 订阅 FFE4 Notify。
-- 获取 FFE9 Write Characteristic 并支持写入。
-- 0x55 / 0x61 / 0x71 缓冲组帧。
-- 0x55 0x61 20Byte 姿态解析。
-- 实时显示 AngleX / AngleY / AngleZ 与接收频率。
-- 1 秒中心零点校准。
-- `GameX = AngleY`、`GameY = -AngleX`。
-- 默认 0.5° 死区。
-- 四方向独立 ROM 结构，当前默认各 20°。
-- PixiJS 小球实时响应 GameInput。
-- Parser 与 MotionProcessor 基础单元测试。
+- Windows Tauri BLE：扫描、连接、FFE4 Notify、FFE9 Write 与异常断线检测。
+- 中心校准与四方向个体 ROM 标定：3 秒采样、前 500ms 忽略、P95 结果。
+- MotionProfile 持久化：保存死区、实测 ROM、训练比例与实际活动范围。
+- 最近设备绑定：按 ID、地址、唯一名称匹配，异常断线按 1/2/5 秒自动重连。
+- 四方向目标触达训练：倒计时、Hold、Timeout、断线暂停和结果统计。
+- IndexedDB 训练历史：结果、Profile 快照、游戏配置快照、详情及单条删除。
+- Vue Router 页面：设备、ROM 标定、游戏、训练、结果、历史和设置。
 
-## Windows 开发环境
+## 开发环境
 
-建议：
-
-1. Windows 10 / Windows 11，电脑具备 BLE。
-2. Node.js 20+。
-3. Rust stable（通过 rustup 安装）。
-4. Microsoft C++ Build Tools / Visual Studio C++ Desktop workload。
-5. WebView2 Runtime。
-
-## 安装
+Windows 10/11、Node.js 20+、Rust stable、Visual Studio C++ Desktop workload、WebView2 Runtime，以及具备 BLE 的电脑。
 
 ```powershell
 npm install
-```
-
-## 先验证前端
-
-```powershell
+npm run test
 npm run build
-npm test
-```
-
-## 启动 Tauri 实机程序
-
-```powershell
 npm run tauri:dev
 ```
 
-操作顺序：
+## 使用流程
 
-1. 打开 BS-BT91，并确保厂家软件已经退出，避免同一设备连接被占用。
-2. 点击“扫描 BS-BT91”。
-3. 从列表选择真实设备。
-4. 点击“连接”。
-5. 确认 AngleX / AngleY / AngleZ 持续变化，Rate 接近当前设备配置（目标约 50Hz）。
-6. 将康复仪器保持自然中心位置。
-7. 点击“保持中心 1 秒并校准”。
-8. 前后左右操作康复仪器，观察 PixiJS 小球。
-
-预期：
+首次使用：
 
 ```text
-左  → 球左移
-右  → 球右移
-前  → 球上移
-后  → 球下移
+设备页扫描并连接 → 中心校准 → 四方向 ROM 标定 → 选择游戏 → 训练 → 结果与历史
 ```
 
-## 当前 V0.1 暂未实现
+后续使用：
 
-- 自动重连。
-- BLE 地址持久绑定。
-- 电量/版本/寄存器操作 UI。
-- MotionConfig 参数设置 UI。
-- ROM 自动校准。
-- EMA / One Euro Filter。
-- Capacitor Android / iOS BLE Adapter。
-- Three.js 游戏。
+```text
+自动尝试恢复上次设备 → 中心校准 → 选择游戏 → 训练
+```
 
-## 实机验收重点
+浏览器仅用于界面预览；真实 BS-BT91 扫描、自动重连和实机训练必须在 `npm run tauri:dev` 打开的 Tauri 桌面窗口内进行。
 
-第一轮请记录：
+## V0.3 实机验收
 
-- 是否能扫描到 BS-BT91；
-- 是否成功连接；
-- Rate 是否约 50Hz；
-- AngleX / AngleY 是否与厂家调试软件方向、量级一致；
-- 校准后中心 GameX/GameY 是否接近 0；
-- 左右前后方向是否正确；
-- 小球是否有明显抖动或迟滞；
-- 断开设备后的程序行为。
-
-如果 Windows 实机出现 BLE API / Rust 编译问题，请保留完整 `cargo` / `tauri dev` 报错日志，再针对具体环境修正。
+1. 每个方向至少重复三次 ROM 标定，确认结果量级稳定且无串轴。
+2. 重启应用，确认 MotionProfile、设备绑定和训练历史仍存在。
+3. 训练中关闭设备，确认游戏暂停、1/2/5 秒重连、重连后要求重新中心校准。
+4. 连续运行至少 30 分钟，观察数据频率、卡顿与历史记录正确性。

@@ -1,5 +1,6 @@
 import type { GameInput } from '../game-input/GameInput'
 import { MotionProcessor } from '../motion/MotionProcessor'
+import type { MotionConfig } from '../motion/MotionConfig'
 import type { ISensorTransport } from './ISensorTransport'
 import type { SensorConnectionState, SensorDevice } from './SensorDevice'
 import type { SensorFrame } from './SensorFrame'
@@ -59,6 +60,24 @@ export class SensorService {
 
   startCalibration(): void {
     this.motion.startCalibration(1000)
+    this.publish()
+  }
+
+  /** 应用新的 ROM 与死区后，立即刷新最近一帧对应的游戏输入。 */
+  updateMotionConfig(config: MotionConfig): void {
+    this.motion.updateConfig(config)
+    if (this.frame) {
+      this.gameInput = this.motion.process(this.frame, this.state === 'connected')
+    }
+    this.publish()
+  }
+
+  /** 断线或更换设备后清除旧中心零点，避免错误复用校准结果。 */
+  resetCalibration(): void {
+    this.motion.resetCalibration()
+    this.gameInput = this.frame
+      ? this.motion.process(this.frame, this.state === 'connected')
+      : { ...this.gameInput, calibrated: false, x: 0, y: 0 }
     this.publish()
   }
 

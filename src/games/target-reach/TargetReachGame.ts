@@ -1,5 +1,6 @@
 import { Application, Graphics, Text } from 'pixi.js'
 import type { GameInput } from '../../core/game-input/GameInput'
+import type { IRehabGame } from '../../core/game/IRehabGame'
 import type { Direction } from '../../core/training/Direction'
 import { TrainingSession } from '../../core/training/TrainingSession'
 import type { TrainingSessionState } from '../../core/training/TrainingSessionState'
@@ -15,7 +16,7 @@ import type { TargetReachGameEvents } from './TargetReachGameEvents'
 import { distanceBetween, getTargetPosition } from './TargetReachMath'
 
 /** 使用归一化 GameInput 完成四方向目标触达训练的 PixiJS 游戏。 */
-export class TargetReachGame {
+export class TargetReachGame implements IRehabGame {
   private app: Application | null = null
   private session = new TrainingSession()
   private latestInput: GameInput = emptyGameInput()

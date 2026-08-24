@@ -10,8 +10,27 @@
 body { margin: 0; min-width: 1080px; min-height: 100vh; }
 button, select { font: inherit; }
 
+.app-nav {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 28px;
+  border-bottom: 1px solid #22334b;
+  background: #0a1727;
+}
+.app-nav a { color: #9fb0c4; text-decoration: none; font-size: 14px; }
+.app-nav a.router-link-active { color: #8fd8ff; font-weight: 700; }
+.app-error { margin: 12px 28px 0; }
+.content-page { min-height: calc(100vh - 52px); padding: 36px max(28px, calc((100vw - 1000px) / 2)); background: radial-gradient(circle at 80% 10%, #15243b 0, #07101d 40%); }
+.content-page > .card, .content-page > .history-list { margin-top: 18px; }
+.game-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+.history-list { display: grid; gap: 12px; }
+.history-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.history-detail { margin-top: 18px; }
+
 .shell {
-  min-height: 100vh;
+  min-height: calc(100vh - 52px);
   display: grid;
   grid-template-columns: 390px 1fr;
   background: radial-gradient(circle at 80% 10%, #15243b 0, #07101d 40%);
@@ -71,7 +90,7 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .metric-grid.compact strong { font-size: 15px; }
 .raw-card code { display: block; word-break: break-all; color: #8fd8ff; font-size: 11px; line-height: 1.5; }
 
-.game-area { min-width: 0; min-height: 100vh; padding: 28px; display: flex; flex-direction: column; }
+.game-area { min-width: 0; min-height: calc(100vh - 52px); padding: 28px; display: flex; flex-direction: column; }
 .game-header { display: flex; justify-content: space-between; align-items: end; margin-bottom: 16px; }
 .game-header strong { display: block; margin-top: 5px; font-size: 20px; }
 .legend { color: #8fa2ba; font-size: 13px; }
@@ -100,7 +119,7 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 }
 
 .training-shell, .result-shell {
-  min-height: 100vh;
+  min-height: calc(100vh - 52px);
   padding: 28px;
   background: radial-gradient(circle at 80% 10%, #15243b 0, #07101d 40%);
 }
@@ -122,3 +141,11 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .result-metrics span, .direction-grid span, .direction-grid small { display: block; color: #91a3ba; font-size: 12px; }
 .result-metrics strong, .direction-grid strong { display: block; margin: 6px 0; font-size: 20px; }
 .result-card > .button { margin-top: 28px; }
+
+@media (max-width: 900px) {
+  body { min-width: 0; }
+  .shell { grid-template-columns: 1fr; }
+  .panel { border-right: 0; border-bottom: 1px solid #22334b; }
+  .training-toolbar, .history-row { align-items: flex-start; flex-direction: column; }
+  .result-metrics, .direction-grid { grid-template-columns: repeat(2, 1fr); }
+}

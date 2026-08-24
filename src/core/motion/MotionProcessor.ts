@@ -11,6 +11,14 @@ export interface CalibrationSnapshot {
   zeroAngleY: number
 }
 
+/** 以中心零点为基准的角度，用于统一 ROM 标定与游戏输入的方向关系。 */
+export interface RelativeMotion {
+  relativeAngleX: number
+  relativeAngleY: number
+  horizontalDeg: number
+  verticalDeg: number
+}
+
 export class MotionProcessor {
   private config: MotionConfig
   private zeroAngleX = 0
@@ -29,6 +37,24 @@ export class MotionProcessor {
 
   updateConfig(config: MotionConfig): void {
     this.config = structuredClone(config)
+  }
+
+  /** 返回配置副本，避免调用方意外改写处理器内部状态。 */
+  getConfig(): MotionConfig {
+    return structuredClone(this.config)
+  }
+
+  /** 将原始姿态转换为项目统一的前后左右相对运动。 */
+  getRelativeMotion(frame: SensorFrame): RelativeMotion {
+    const relativeAngleX = frame.angleX - this.zeroAngleX
+    const relativeAngleY = frame.angleY - this.zeroAngleY
+    return {
+      relativeAngleX,
+      relativeAngleY,
+      // 实机数据确认：AngleY 控制左右，-AngleX 控制前后。
+      horizontalDeg: relativeAngleY,
+      verticalDeg: -relativeAngleX,
+    }
   }
 
   startCalibration(durationMs = 1000): void {
@@ -77,22 +103,17 @@ export class MotionProcessor {
       }
     }
 
-    const relativeAngleX = frame.angleX - this.zeroAngleX
-    const relativeAngleY = frame.angleY - this.zeroAngleY
-
-    // 真实 T01~T10 数据确认：左右=AngleY，前后=-AngleX。
-    const horizontalRaw = relativeAngleY
-    const verticalRaw = -relativeAngleX
+    const motion = this.getRelativeMotion(frame)
 
     return {
       x: this.normalizeSigned(
-        horizontalRaw,
+        motion.horizontalDeg,
         this.config.horizontalDeadZone,
         this.config.range.leftMax,
         this.config.range.rightMax,
       ),
       y: this.normalizeSigned(
-        verticalRaw,
+        motion.verticalDeg,
         this.config.verticalDeadZone,
         this.config.range.backwardMax,
         this.config.range.forwardMax,
