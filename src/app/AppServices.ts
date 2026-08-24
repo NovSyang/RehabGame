@@ -9,6 +9,7 @@ import { LocalStorageStore } from '../core/storage/LocalStorageStore'
 import { IndexedDbTrainingRepository } from '../core/training/IndexedDbTrainingRepository'
 import type { TrainingRecord } from '../core/training/TrainingRecord'
 import type { TrainingResult } from '../core/training/TrainingResult'
+import type { TrainingReplay } from '../core/replay/TrainingReplay'
 import { defaultTargetReachGameConfig } from '../games/target-reach/TargetReachGameConfig'
 import { TauriBleTransport } from '../platform/tauri/TauriBleTransport'
 
@@ -36,9 +37,12 @@ export function initializeAppServices(): Promise<void> {
 }
 
 /** 将完成结果连同当时配置写入历史，保持历史数据可解释。 */
-export async function persistTargetReachResult(result: TrainingResult): Promise<TrainingRecord> {
+export async function persistTargetReachResult(
+  result: TrainingResult,
+  replay: TrainingReplay,
+): Promise<TrainingRecord> {
   const record: TrainingRecord = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: createRecordId(),
     gameId: 'target-reach',
     gameName: '四方向目标触达',
@@ -46,6 +50,7 @@ export async function persistTargetReachResult(result: TrainingResult): Promise<
     result: structuredClone(result),
     motionProfile: motionProfileService.getCurrent(),
     gameConfig: structuredClone(defaultTargetReachGameConfig),
+    replay: structuredClone(replay),
   }
   await trainingRepository.save(record)
   latestTrainingRecord.value = record

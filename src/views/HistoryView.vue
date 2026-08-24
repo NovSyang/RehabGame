@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { trainingRepository } from '../app/AppServices'
 import type { TrainingRecord } from '../core/training/TrainingRecord'
+import TrainingHistoryDialog from '../components/history/TrainingHistoryDialog.vue'
 
 const records = ref<TrainingRecord[]>([])
 const selected = ref<TrainingRecord | null>(null)
@@ -16,4 +17,4 @@ function duration(value: number): string { return `${(value / 1000).toFixed(1)} 
 function formatError(error: unknown): string { return error instanceof Error ? error.message : String(error) }
 </script>
 
-<template><main class="content-page"><p class="eyebrow">Training History</p><h1>训练历史</h1><p v-if="errorMessage" class="error">{{ errorMessage }}</p><p v-if="!records.length" class="muted">暂无已保存训练记录。</p><div v-else class="history-list"><article v-for="record in records" :key="record.id" class="card"><div class="history-row"><div><strong>{{ formatDate(record.completedAt) }}</strong><p class="muted small">{{ record.gameName }} · {{ duration(record.result.durationMs) }} · 成功率 {{ (record.result.successRate * 100).toFixed(0) }}%</p></div><div class="row"><button class="button" @click="selected = record">详情</button><button class="button danger" @click="remove(record)">删除</button></div></div></article></div><section v-if="selected" class="card history-detail"><h2>{{ selected.gameName }} 详情</h2><p>平均反应：{{ selected.result.averageReactionTimeMs === null ? '--' : `${(selected.result.averageReactionTimeMs / 1000).toFixed(2)} s` }}；平均到达：{{ selected.result.averageReachTimeMs === null ? '--' : `${(selected.result.averageReachTimeMs / 1000).toFixed(2)} s` }}</p><div class="direction-grid"><div v-for="(item, direction) in selected.result.directions" :key="direction"><span>{{ direction }}</span><strong>{{ item.success }} / {{ item.total }}</strong></div></div></section></main></template>
+<template><main class="content-page"><p class="eyebrow">Training History</p><h1>训练历史</h1><p v-if="errorMessage" class="error">{{ errorMessage }}</p><p v-if="!records.length" class="muted">暂无已保存训练记录。</p><div v-else class="history-list"><article v-for="record in records" :key="record.id" class="card"><div class="history-row"><div><strong>{{ formatDate(record.completedAt) }}</strong><p class="muted small">{{ record.gameName }} · {{ duration(record.result.durationMs) }} · 成功率 {{ (record.result.successRate * 100).toFixed(0) }}%</p></div><div class="row"><button class="button" @click="selected = record">详情</button><button class="button danger" @click="remove(record)">删除</button></div></div></article></div><TrainingHistoryDialog v-if="selected" :record="selected" @close="selected = null" /></main></template>

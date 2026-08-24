@@ -1,4 +1,4 @@
-# 开发状态 V0.3
+# 开发状态 V0.4
 
 ## V0.1 已完成
 
@@ -36,7 +36,7 @@
 - [x] IRehabGame、TargetReachGame 实现与 GameDefinition 注册表
 - [x] V0.3 单元测试覆盖 Motion、ROM、绑定、重连与 IndexedDB
 
-## 待实机验收
+## V0.3 已通过实机验收
 
 - [x] 四方向 ROM 重复测量的稳定性与动作方向一致性
 - [x] Profile 重启后仍正确影响 TargetReach 输入范围
@@ -44,3 +44,32 @@
 - [x] Training History 重启后的保存、查看与删除
 - [x] 连续运行至少 30 分钟，确认约 50Hz、无阻塞卡顿和明显内存增长
 - [x] `npm run tauri:build` 后在目标 Windows 环境启动验证
+
+## V0.4 已实现
+
+### Replay Core
+
+- [x] TrainingReplay、25Hz Recorder 与插值数学
+- [x] 有效训练时间采样、坐标 clamp 与四位小数精度
+- [x] TargetReach 的 target、成功、失败、暂停、继续事件
+
+### Persistence
+
+- [x] TrainingRecord V2 保存 Replay
+- [x] IndexedDB 继续兼容 V1 无 Replay 的历史记录
+
+### History Replay
+
+- [x] History 详情 Modal、ESC 与遮罩关闭
+- [x] 历史数据汇总、MotionProfile 与游戏配置快照展示
+- [x] 动态回放、播放暂停、重新开始、Seek、0.5x/1x/2x
+- [x] 完整二维轨迹、目标编号与成功/失败标记
+- [x] Modal 关闭时释放 Pixi Canvas 与 Ticker
+
+## V0.4 待实机验收
+
+- [ ] 完成带明显二维偏移和暂停的 BS-BT91 TargetReach 训练
+- [ ] 验证目标顺序、轨迹方向、成功/失败与实际训练一致
+- [ ] 验证 30 秒真实暂停不计入 Replay 时长
+- [ ] 验证 0/25/50/75/100% Seek 和 0.5x/1x/2x 播放
+- [ ] 验证旧 V1 与新 V2 历史详情、弹窗反复打开关闭无资源残留

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { persistTargetReachResult, sensorService } from '../app/AppServices'
+import { TrainingReplayRecorder } from '../core/replay/TrainingReplayRecorder'
 import type { TrainingSessionState } from '../core/training/TrainingSessionState'
 import { TargetReachGame } from '../games/target-reach/TargetReachGame'
 
@@ -13,24 +14,32 @@ const successCount = ref(0)
 const attemptedCount = ref(0)
 const currentTarget = ref('')
 const canPause = computed(() => trainingState.value === 'playing' || trainingState.value === 'paused')
+const replayRecorder = new TrainingReplayRecorder(40)
 
 const game = new TargetReachGame(undefined, {
   onTargetChanged(direction, index) { currentTarget.value = `${index} · ${directionText(direction)}` },
   onScoreChanged(success, total) { successCount.value = success; attemptedCount.value = total },
   onSessionStateChanged(state) { trainingState.value = state },
+  onReplayEvent(event) { replayRecorder.recordEvent(event) },
   onCompleted(result) { void completeTraining(result) },
 })
 let unsubscribe: (() => void) | null = null
 
 // 游戏仅接收标准化 GameInput，因此断线和 ROM 更新不需要修改游戏判定。
 onMounted(async () => {
-  unsubscribe = sensorService.onSnapshot((snapshot) => game.setInput(snapshot.gameInput))
+  unsubscribe = sensorService.onSnapshot((snapshot) => {
+    game.setInput(snapshot.gameInput)
+    // 只在 playing 采样，Pause 的墙钟时间不会进入 Replay。
+    if (trainingState.value === 'playing') {
+      replayRecorder.recordInput(snapshot.gameInput, game.getTrainingElapsedMs())
+    }
+  })
   await nextTick()
   if (!gameHost.value || !sensorService.motion.getCalibrationSnapshot().calibrated) {
     errorMessage.value = '请连接设备并完成中心校准后开始训练。'
     return
   }
-  try { await game.mount(gameHost.value); game.start() }
+  try { await game.mount(gameHost.value); replayRecorder.reset(); game.start() }
   catch (error) { errorMessage.value = formatError(error) }
 })
 onBeforeUnmount(() => { unsubscribe?.(); game.destroy() })
@@ -41,7 +50,11 @@ function togglePause(): void {
 }
 function abort(): void { game.abort(); void router.push('/device') }
 async function completeTraining(result: Parameters<NonNullable<typeof game['events']['onCompleted']>>[0]): Promise<void> {
-  try { await persistTargetReachResult(result); await router.push('/result') }
+  try {
+    const replay = replayRecorder.finish(result.durationMs)
+    await persistTargetReachResult(result, replay)
+    await router.push('/result')
+  }
   catch (error) { errorMessage.value = `训练已完成，但保存历史失败：${formatError(error)}` }
 }
 function directionText(value: 'left' | 'right' | 'forward' | 'backward'): string { return { left: '左', right: '右', forward: '前', backward: '后' }[value] }

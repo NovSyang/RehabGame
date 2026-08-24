@@ -94,6 +94,7 @@ export class TargetReachGame implements IRehabGame {
     if (this.session.getSnapshot(now).state !== 'playing') return
     // 暂停会打断连续保持，恢复后必须重新满足完整 Hold 时间。
     this.targetHoldStartedElapsedMs = null
+    this.events.onReplayEvent?.({ elapsedMs: this.getTrainingElapsedMs(now), type: 'pause' })
     this.session.pause(now)
     this.notifySessionState()
   }
@@ -104,6 +105,7 @@ export class TargetReachGame implements IRehabGame {
 
     if (this.session.getSnapshot(now).state !== 'paused') return
     this.session.resume(now)
+    this.events.onReplayEvent?.({ elapsedMs: this.getTrainingElapsedMs(now), type: 'resume' })
     this.notifySessionState()
   }
 
@@ -154,6 +156,17 @@ export class TargetReachGame implements IRehabGame {
     this.currentMaxInput = 0
     if (this.target) this.target.visible = true
     this.events.onTargetChanged?.(this.currentDirection, this.attempts.length + 1)
+    const targetPoint = getTargetPosition(this.currentDirection, this.config.targetDistance)
+    this.events.onReplayEvent?.({
+      elapsedMs: this.getTrainingElapsedMs(now),
+      type: 'target-start',
+      payload: {
+        index: this.attempts.length + 1,
+        direction: this.currentDirection,
+        targetX: targetPoint.x,
+        targetY: targetPoint.y,
+      },
+    })
   }
 
   private updateCurrentAttempt(now: number): void {
@@ -195,6 +208,11 @@ export class TargetReachGame implements IRehabGame {
       reachTimeMs: success ? Math.max(0, this.getCurrentTargetElapsedMs(now)) : null,
       maxInput: this.currentMaxInput,
     })
+    this.events.onReplayEvent?.({
+      elapsedMs: this.getTrainingElapsedMs(now),
+      type: success ? 'target-success' : 'target-failed',
+      payload: { index: this.attempts.length },
+    })
     this.currentDirection = null
     this.targetHoldStartedElapsedMs = null
     if (this.target) this.target.visible = false
@@ -221,6 +239,11 @@ export class TargetReachGame implements IRehabGame {
   private getCurrentTargetElapsedMs(now: number): number {
     const sessionElapsed = this.session.getSnapshot(now).playingElapsedMs
     return Math.max(0, sessionElapsed - this.targetStartedElapsedMs)
+  }
+
+  /** 供训练页 Recorder 使用的有效训练时间，不包含真实暂停时长。 */
+  getTrainingElapsedMs(now = performance.now()): number {
+    return this.session.getSnapshot(now).playingElapsedMs
   }
 
   private pickNextDirection(): Direction {

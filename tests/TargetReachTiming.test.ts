@@ -4,6 +4,7 @@ import { TrainingSession } from '../src/core/training/TrainingSession'
 import type { TargetAttemptResult } from '../src/core/training/TrainingResult'
 import { TargetReachGame } from '../src/games/target-reach/TargetReachGame'
 import type { TargetReachGameConfig } from '../src/games/target-reach/TargetReachGameConfig'
+import type { TargetReachReplayEvent } from '../src/games/target-reach/replay/TargetReachReplayEvent'
 
 const config: TargetReachGameConfig = {
   sessionDurationMs: 60_000, targetCount: 20, targetDistance: 0.7, targetRadius: 0.2,
@@ -77,5 +78,19 @@ describe('TargetReachGame 暂停计时', () => {
 
     expect(internals.attempts[0].reactionTimeMs).toBeGreaterThanOrEqual(0)
     expect(internals.attempts[0].reachTimeMs).toBeGreaterThanOrEqual(internals.attempts[0].reactionTimeMs ?? 0)
+  })
+
+  it('记录目标与暂停事件，并使用非负有效训练时间', () => {
+    const events: TargetReachReplayEvent[] = []
+    const game = new TargetReachGame(config, { onReplayEvent: (event) => events.push(event) })
+    const internals = game as unknown as GameInternals
+    internals.session.start(1, 0)
+    game.setInput(neutral(1)); internals.update(1)
+    game.pause(101); game.resume(10_101)
+    game.setInput(onTarget(10_601)); internals.update(10_601); internals.update(10_901)
+
+    expect(events.map((event) => event.type)).toEqual(['target-start', 'pause', 'resume', 'target-success'])
+    expect(events.every((event) => event.elapsedMs >= 0)).toBe(true)
+    expect(events[0]).toMatchObject({ payload: { index: 1, direction: 'right', targetX: 0.7, targetY: 0 } })
   })
 })
