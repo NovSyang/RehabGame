@@ -1,32 +1,29 @@
-# 开发状态 V0.1
+# 开发状态 V0.2
 
-## 已落地
+## V0.1 已完成
 
-- [x] M0 Vue3 + TypeScript + Vite + PixiJS + Tauri 工程骨架
-- [x] M1 SensorFrame / GameInput / ISensorTransport / MotionConfig
-- [x] M2 Tauri Windows BLE Adapter 第一版
-- [x] M3 BS-BT91 FrameAssembler + 0x61 Parser
-- [x] M4 MotionProcessor V0.1
-- [x] M5 PixiJS Ball Demo 第一版
+- [x] Vue3 + TypeScript + PixiJS + Tauri 工程骨架
+- [x] Windows BLE 扫描、连接与 Notify 桥接
+- [x] BS-BT91 帧组装与实时数据解析
+- [x] MotionProcessor、中心零点校准与归一化 GameInput
+- [x] Ball Demo 诊断游戏
 
-## 等待 Windows + 真实 BS-BT91 实机验证
+## V0.2 已完成
 
-- [ ] Windows Rust/Tauri 完整编译
-- [ ] 扫描真实 BS-BT91
-- [ ] FFE5 / FFE4 / FFE9 实机确认
-- [ ] 50Hz Notify 稳定性
-- [ ] 与厂家调试软件 AngleX/Y/Z 对照
-- [ ] 中心零点校准
-- [ ] 前后左右方向验证
-- [ ] 小球跟手性验证
+- [x] 清理 TypeScript 编译生成物并启用 `noEmit`
+- [x] TrainingSession 与训练结果领域模型
+- [x] 四方向 TargetReachGame 配置、数学判定与随机目标
+- [x] 3 秒倒计时、300ms Hold、8 秒 Timeout
+- [x] Pause / Resume 与 BLE 断线自动暂停
+- [x] 训练目标、成功失败与方向统计
+- [x] 设备准备、游戏、结果三页面模式
+- [x] TrainingSession、目标数学和结果统计单元测试
 
-## 实机通过后下一批任务
+## 待实机验收
 
-- [ ] MotionConfig UI（DeadZone + 4方向ROM）
-- [ ] ROM Calibration 流程
-- [ ] 自动重连
-- [ ] BLE设备持久绑定
-- [ ] Notify 间隔和掉帧统计
-- [ ] 轻量 EMA 可选滤波
-- [ ] 第一款正式康复小游戏
-- [ ] Capacitor BLE Adapter
+- [ ] BS-BT91 连接、校准和约 50Hz Notify 稳定性
+- [ ] 左、右、前、后四方向目标均可完成
+- [ ] 快速扫过目标不会成功，保持约 300ms 才成功
+- [ ] 单目标 8 秒超时后自动进入下一目标
+- [ ] 达到 20 目标或 120 秒后结果统计正确
+- [ ] BLE 断线自动暂停，重新连接并校准后可继续

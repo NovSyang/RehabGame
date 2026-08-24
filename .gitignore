@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+src-tauri/target/
+src-tauri/gen/
+rustup-init.exe
+*.log
