@@ -26,9 +26,10 @@ export class TargetReachGame implements IRehabGame {
   private directionText: Text | null = null
   private currentDirection: Direction | null = null
   private targetStartedAt = 0
-  private targetPausedAt = 0
+  private targetStartedElapsedMs = 0
   private firstMovementAt: number | null = null
-  private targetHoldStartedAt: number | null = null
+  private currentReactionTimeMs: number | null = null
+  private targetHoldStartedElapsedMs: number | null = null
   private currentMaxInput = 0
   private attempts: TargetAttemptResult[] = []
   private lastNotifiedState: TrainingSessionState = 'idle'
@@ -83,30 +84,25 @@ export class TargetReachGame implements IRehabGame {
 
     this.attempts = []
     this.currentDirection = null
-    this.targetHoldStartedAt = null
-    this.targetPausedAt = 0
+    this.currentReactionTimeMs = null
+    this.targetHoldStartedElapsedMs = null
     this.session.start(performance.now(), 3000)
     this.notifySessionState()
   }
 
-  pause(): void {
-    const now = performance.now()
+  pause(now = performance.now()): void {
     if (this.session.getSnapshot(now).state !== 'playing') return
-    this.targetPausedAt = now
+    // 暂停会打断连续保持，恢复后必须重新满足完整 Hold 时间。
+    this.targetHoldStartedElapsedMs = null
     this.session.pause(now)
     this.notifySessionState()
   }
 
-  resume(): void {
+  resume(now = performance.now()): void {
     if (!this.latestInput.connected) throw new Error('传感器未连接，无法继续训练')
     if (!this.latestInput.calibrated) throw new Error('请重新完成中心校准后继续训练')
 
-    const now = performance.now()
     if (this.session.getSnapshot(now).state !== 'paused') return
-    if (this.targetPausedAt > 0 && this.currentDirection) {
-      this.targetStartedAt += now - this.targetPausedAt
-    }
-    this.targetPausedAt = 0
     this.session.resume(now)
     this.notifySessionState()
   }
@@ -141,7 +137,7 @@ export class TargetReachGame implements IRehabGame {
       this.beginNextTarget(now)
       return
     }
-    if (now - this.targetStartedAt >= this.config.targetTimeoutMs) {
+    if (this.getCurrentTargetElapsedMs(now) >= this.config.targetTimeoutMs) {
       this.finishCurrentTarget(now, false)
       return
     }
@@ -151,8 +147,10 @@ export class TargetReachGame implements IRehabGame {
   private beginNextTarget(now: number): void {
     this.currentDirection = this.pickNextDirection()
     this.targetStartedAt = now
+    this.targetStartedElapsedMs = this.session.getSnapshot(now).playingElapsedMs
     this.firstMovementAt = null
-    this.targetHoldStartedAt = null
+    this.currentReactionTimeMs = null
+    this.targetHoldStartedElapsedMs = null
     this.currentMaxInput = 0
     if (this.target) this.target.visible = true
     this.events.onTargetChanged?.(this.currentDirection, this.attempts.length + 1)
@@ -166,13 +164,18 @@ export class TargetReachGame implements IRehabGame {
     this.currentMaxInput = Math.max(this.currentMaxInput, magnitude)
     if (this.firstMovementAt === null && magnitude >= this.config.movementThreshold) {
       this.firstMovementAt = now
+      // 反应时间在首次有效动作时固定，不会受后续暂停影响。
+      this.currentReactionTimeMs = this.getCurrentTargetElapsedMs(now)
     }
 
     if (distanceBetween(currentPoint, targetPoint) <= this.config.targetRadius) {
-      this.targetHoldStartedAt ??= now
-      if (now - this.targetHoldStartedAt >= this.config.holdTimeMs) this.finishCurrentTarget(now, true)
+      const sessionElapsed = this.session.getSnapshot(now).playingElapsedMs
+      this.targetHoldStartedElapsedMs ??= sessionElapsed
+      if (sessionElapsed - this.targetHoldStartedElapsedMs >= this.config.holdTimeMs) {
+        this.finishCurrentTarget(now, true)
+      }
     } else {
-      this.targetHoldStartedAt = null
+      this.targetHoldStartedElapsedMs = null
     }
   }
 
@@ -187,12 +190,13 @@ export class TargetReachGame implements IRehabGame {
       reachedAt: success ? now : null,
       endedAt: now,
       success,
-      reactionTimeMs: this.firstMovementAt === null ? null : this.firstMovementAt - this.targetStartedAt,
-      reachTimeMs: success ? now - this.targetStartedAt : null,
+      // 所有受暂停影响的业务时间使用 TrainingSession 的有效训练时间轴。
+      reactionTimeMs: this.currentReactionTimeMs === null ? null : Math.max(0, this.currentReactionTimeMs),
+      reachTimeMs: success ? Math.max(0, this.getCurrentTargetElapsedMs(now)) : null,
       maxInput: this.currentMaxInput,
     })
     this.currentDirection = null
-    this.targetHoldStartedAt = null
+    this.targetHoldStartedElapsedMs = null
     if (this.target) this.target.visible = false
     const successCount = this.attempts.filter((attempt) => attempt.success).length
     this.events.onScoreChanged?.(successCount, this.attempts.length)
@@ -211,6 +215,12 @@ export class TargetReachGame implements IRehabGame {
     )
     this.notifySessionState()
     this.events.onCompleted?.(result)
+  }
+
+  /** 返回当前目标已消耗的有效训练时间，自动排除任意次数的暂停。 */
+  private getCurrentTargetElapsedMs(now: number): number {
+    const sessionElapsed = this.session.getSnapshot(now).playingElapsedMs
+    return Math.max(0, sessionElapsed - this.targetStartedElapsedMs)
   }
 
   private pickNextDirection(): Direction {
