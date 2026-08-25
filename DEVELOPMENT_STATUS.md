@@ -165,9 +165,20 @@
 - [x] 动态回放、Seek、0.5x/1x/2x 与完整患者/参考轨迹
 - [x] Vue Proxy 与嵌套 Replay Payload 的安全普通对象复制
 
+### Training History UX Enhancement
+
+- [x] 按 `gameId` 分组历史，并仅为存在记录的游戏生成 Card
+- [x] Card 展示训练次数、最近训练和累计有效训练时长
+- [x] Card 进入单游戏 Record Table，主要结果继续复用 Game Presenter
+- [x] 详情继续复用 TrainingHistoryDialog，关闭后保持当前 Table
+- [x] 删除后同步 Group 统计，删除最后一条后自动返回 Card 层
+- [x] Unknown / Disabled Game 历史名称与详情降级兼容
+- [x] TrainingHistoryGroup 分组、排序、统计和异常时长单元测试
+- [ ] 使用真实 TargetReach 与 TrajectoryFollow 历史完成 Card、Table、详情和 Replay 页面回归
+
 ### 自动验证
 
-- [x] 28 个测试文件、116 项单元测试通过
+- [x] 29 个测试文件、123 项单元测试通过
 - [x] `npm run build` 通过
 - [x] `npm run tauri:build` 最终验证
 
