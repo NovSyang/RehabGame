@@ -1,4 +1,4 @@
-# BS-BT91 康复交互游戏 V0.7
+# BS-BT91 康复交互游戏 V0.7 / Android Adaptation
 
 V0.7 在已完成实机验证的设备、ROM 和训练闭环上，加入通用多游戏框架与第二款正式训练游戏：
 
@@ -23,7 +23,7 @@ BS-BT91 → BLE 自动恢复 → 每局中心 Zero → MotionProfile
 
 ## 开发环境
 
-Windows 10/11、Node.js 20+、Rust stable、Visual Studio C++ Desktop workload、WebView2 Runtime，以及具备 BLE 的电脑。
+Windows 10/11、Node.js 22+、Rust stable、Visual Studio C++ Desktop workload、WebView2 Runtime；Android 构建另外需要 JDK 21、Android SDK 36、Build Tools 36 和 adb。
 
 ```powershell
 npm install
@@ -31,6 +31,15 @@ npm run test
 npm run build
 npm run tauri:dev
 ```
+
+Android 使用 Capacitor 8，共享同一份 Vue、Pixi、训练和历史代码：
+
+```powershell
+npm run android:sync
+npm run android:build:debug
+```
+
+Debug APK 输出在 `android/app/build/outputs/apk/debug/app-debug.apk`。连接已开启 USB 调试的真机后，可使用 `adb install -r` 安装。
 
 ## 使用流程
 
@@ -46,7 +55,14 @@ npm run tauri:dev
 后台恢复上次设备 → 选择游戏 → 每局中心校准 → 训练
 ```
 
-浏览器仅用于界面预览；真实 BS-BT91 扫描、自动重连和实机训练必须在 `npm run tauri:dev` 打开的 Tauri 桌面窗口内进行。
+浏览器仅用于界面预览；真实 BS-BT91 扫描、自动重连和实机训练必须在 `npm run tauri:dev` 打开的 Tauri 桌面窗口或 Android Native 应用中进行。
+
+## Android 移动端说明
+
+- Android 包名为 `com.rehabgame.app`，应用名为 `RehabGame`。
+- 训练页会尝试锁定横屏并保持屏幕常亮；系统拒绝方向锁定时仍可继续操作。
+- 训练进入后台会自动暂停，回到前台后必须重新确认自然中心。
+- 本阶段不提交 keystore 或签名密码，正式签名包在真机验收后单独冻结。
 
 ## V0.7 实机验收重点
 

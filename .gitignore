@@ -10,3 +10,15 @@ src-tauri/target/
 src-tauri/gen/
 rustup-init.exe
 *.log
+
+# Android 工程只提交源码，构建缓存、本机 SDK 路径和签名材料不得进入仓库。
+android/.gradle/
+android/.idea/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties

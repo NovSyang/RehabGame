@@ -18,7 +18,8 @@ export const router = createRouter({
     { path: '/setup', component: FirstRunSetupView },
     { path: '/rom-calibration', component: RomCalibrationView },
     { path: '/games', component: GameSelectView },
-    { path: '/training/:gameId', component: TrainingView },
+    // 训练布局在 Android 隐藏全局导航，并由显示服务进入横屏与常亮模式。
+    { path: '/training/:gameId', component: TrainingView, meta: { trainingLayout: true } },
     { path: '/result', component: ResultView },
     { path: '/history', component: HistoryView },
     { path: '/settings', component: SettingsView },

@@ -19,6 +19,8 @@ class FakeTransport implements ISensorTransport {
   }
   onData(callback: (packet: SensorDataPacket) => void): () => void { this.dataCallbacks.add(callback); return () => this.dataCallbacks.delete(callback) }
   onStateChanged(callback: (state: SensorConnectionState) => void): () => void { this.stateCallbacks.add(callback); return () => this.stateCallbacks.delete(callback) }
+  /** 测试 Transport 没有原生资源，释放操作保持为空实现。 */
+  async dispose(): Promise<void> {}
   emitState(state: SensorConnectionState): void { for (const callback of this.stateCallbacks) callback(state) }
   emitData(data: Uint8Array, timestamp: number): void { for (const callback of this.dataCallbacks) callback({ data, timestamp }) }
 }

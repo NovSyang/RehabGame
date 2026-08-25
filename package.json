@@ -10,9 +10,20 @@
     "test": "vitest run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "cap": "cap",
+    "android:sync": "npm run build && cap sync android",
+    "android:build:debug": "npm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:build:release": "npm run android:sync && cd android && gradlew.bat assembleRelease",
+    "android:bundle": "npm run android:sync && cd android && gradlew.bat bundleRelease"
   },
   "dependencies": {
+    "@capacitor-community/bluetooth-le": "^8.3.0",
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/screen-orientation": "^8.0.1",
     "@tauri-apps/api": "^2.0.0",
     "pinia": "^3.0.0",
     "pixi.js": "^8.0.0",
@@ -20,6 +31,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@tauri-apps/cli": "^2.0.0",
     "@types/node": "^22.0.0",
     "@vitejs/plugin-vue": "^6.0.0",

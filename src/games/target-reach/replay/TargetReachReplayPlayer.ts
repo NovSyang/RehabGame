@@ -31,6 +31,7 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   private pathGraphic: Graphics | null = null
   private labels = new Container()
   private listeners = new Set<(snapshot: ReplayPlayerSnapshot) => void>()
+  private resizeObserver: ResizeObserver | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -42,6 +43,9 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     this.pathGraphic = new Graphics()
     app.stage.addChild(this.pathGraphic, this.targetGraphic, this.playerGraphic, this.labels)
     this.app = app
+    // 回放的完整轨迹是静态几何，Dialog 尺寸变化后需要重新映射坐标。
+    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render()))
+    this.resizeObserver.observe(container)
     app.ticker.add(() => this.tick(performance.now()))
     this.render()
   }
@@ -103,6 +107,8 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.playerGraphic = null

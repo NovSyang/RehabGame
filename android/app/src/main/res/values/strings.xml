@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RehabGame</string>
+    <string name="title_activity_main">RehabGame</string>
+    <string name="package_name">com.rehabgame.app</string>
+    <string name="custom_url_scheme">com.rehabgame.app</string>
+</resources>

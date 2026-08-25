@@ -1,32 +1,49 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { connectionManager, initializeAppServices, transport } from './app/AppServices'
+import { useRoute, useRouter } from 'vue-router'
+import { appLifecycleService, backButtonService, connectionManager, initializeAppServices, transport } from './app/AppServices'
 import DeviceConnectionLoading from './components/app/DeviceConnectionLoading.vue'
 import DeviceConnectionStatus from './components/app/DeviceConnectionStatus.vue'
+import { isAndroidNativeRuntime } from './platform/PlatformRuntime'
 
 const startupError = ref('')
+const route = useRoute()
+const router = useRouter()
+const androidNative = isAndroidNativeRuntime()
+const mobileTrainingLayout = computed(() => androidNative && route.meta.trainingLayout === true)
+let unsubscribeBack: (() => void) | null = null
 
 // 全局只初始化一次服务，页面切换不会中断 BLE 监听或丢失当前 Profile。
 onMounted(async () => {
   try { await initializeAppServices() }
   catch (error) { startupError.value = error instanceof Error ? error.message : String(error) }
+  // Android Back 在训练中先确认，普通页面继续遵守 Vue Router 历史。
+  unsubscribeBack = backButtonService.onBack(({ canGoBack }) => {
+    if (route.meta.trainingLayout === true) {
+      if (window.confirm('确认结束当前训练吗？\n\n当前未完成的训练不会保存。')) void router.push('/games')
+      return
+    }
+    if (canGoBack) router.back()
+    else void backButtonService.minimizeApp()
+  })
 })
 
 onBeforeUnmount(async () => {
+  unsubscribeBack?.()
   connectionManager.dispose()
-  await transport.dispose()
+  await Promise.allSettled([transport.dispose(), appLifecycleService.dispose(), backButtonService.dispose()])
 })
 </script>
 
 <template>
-  <header class="app-nav">
+  <header v-if="!mobileTrainingLayout" class="app-nav">
     <RouterLink to="/games">训练</RouterLink>
     <RouterLink to="/history">历史</RouterLink>
     <RouterLink to="/settings">设置</RouterLink>
     <DeviceConnectionStatus />
   </header>
-  <DeviceConnectionLoading />
+  <DeviceConnectionLoading v-if="!mobileTrainingLayout" />
   <p v-if="startupError" class="error app-error">{{ startupError }}</p>
-  <RouterView />
+  <RouterView :class="{ 'native-training-route': mobileTrainingLayout }" />
 </template>

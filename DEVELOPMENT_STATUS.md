@@ -190,3 +190,43 @@
 - [x] 验证旧 V1/V2 TargetReach 与 V0.7 两款游戏混合历史
 - [x] 验证两类动态/完整回放、Seek、倍速和重复开关无资源残留
 - [x] 连续运行至少 30 分钟，确认 BLE、Battery Timer、Pixi Ticker 与内存稳定
+
+## Android 移动端适配
+
+### 环境与 Capacitor Build
+
+- [x] 确认 Node 22、JDK 21、Android SDK 36、Build Tools 36 与 adb 可用
+- [x] 接入 Capacitor 8、Android 工程、App、Screen Orientation、BLE 与 Keep Awake 插件
+- [x] 固定 `com.rehabgame.app`、`RehabGame` 和 `dist` Web 产物目录
+- [x] 完成前端构建与 `cap sync android`
+- [ ] 生成并在真机安装 Debug APK
+
+### 平台抽象与 Android BLE
+
+- [x] `ISensorTransport.dispose()`、平台 Transport Factory 与浏览器保护
+- [x] Capacitor BLE 3 秒扫描、BS 名称过滤、ID 去重和扫描清理
+- [x] FFE5/FFE4/FFE9 特征验证、Notify 数据复制与按能力选择写入方式
+- [x] Android 12+ Nearby Devices 与 Android 11- 旧定位权限配置
+- [x] 权限拒绝、永久拒绝、蓝牙关闭终止重试，普通错误保留有限退避
+- [x] 连接、断线、Battery 命令与现有 ConnectionManager/SensorService 链路复用
+- [ ] 真机验证 Scan、Connect、约 50Hz、Battery、Reconnect、Switch 与 Forget
+
+### Responsive 与移动训练
+
+- [x] 移除 1080px 强制宽度，加入 320px 下限、动态视口和 Safe Area
+- [x] Phone History Record Card、触控尺寸、移动 Dialog 与普通页面单列布局
+- [x] Android 训练横屏、常亮、紧凑 Toolbar 和 Portrait Fallback
+- [x] App 后台暂停、前台重新中心、手动暂停优先与 Android Back 结束确认
+- [x] TargetReach、TrajectoryFollow 与两类 Replay 的尺寸变化重绘和资源清理
+- [ ] 真机验证 360/390/430/768px、双游戏横屏、前后台恢复和系统返回键
+
+### 自动验证与交付边界
+
+- [x] 32 个测试文件、132 项单元测试通过
+- [x] `npm run build` 与 Capacitor Sync 通过
+- [x] `npm run tauri:build` 回归
+- [ ] Android Debug APK、未签名 Release APK 与未签名 AAB 构建
+  - 当前阻塞：Gradle 8.14.3 官方分发包在本机网络下多次连接/读取超时，尚未进入项目编译阶段
+- [ ] Android localStorage、IndexedDB、History 与 Replay 跨 Force Stop 验证
+- [ ] Android 30 分钟 BLE、Battery Timer、Pixi、Observer 与内存稳定性
+- [ ] 正式 keystore、Signed Release APK 与签名包实机验收（本轮明确延期）

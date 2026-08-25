@@ -25,6 +25,7 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
   private target: Graphics | null = null
   private countdownText: Text | null = null
   private directionText: Text | null = null
+  private resizeObserver: ResizeObserver | null = null
   private currentDirection: Direction | null = null
   private targetStartedAt = 0
   private targetStartedElapsedMs = 0
@@ -67,6 +68,9 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
     this.target = target
     this.countdownText = countdownText
     this.directionText = directionText
+    // 容器旋转或分屏后重新按最新 screen 计算目标、玩家和倒计时位置。
+    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render(performance.now())))
+    this.resizeObserver.observe(container)
     app.ticker.add(() => {
       const now = performance.now()
       this.update(now)
@@ -120,6 +124,8 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.player = null

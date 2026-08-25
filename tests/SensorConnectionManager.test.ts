@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { IDeviceBindingRepository, DeviceBinding } from '../src/core/sensor/DeviceBinding'
 import { SensorConnectionManager, type SensorConnectionPort } from '../src/core/sensor/SensorConnectionManager'
 import type { SensorConnectionState, SensorDevice } from '../src/core/sensor/SensorDevice'
+import { SensorTransportError } from '../src/core/sensor/SensorTransportError'
 
 class BindingRepository implements IDeviceBindingRepository {
   saved: DeviceBinding | null
@@ -18,9 +19,14 @@ class FakeSensor implements SensorConnectionPort {
   resetCount = 0
   scanCount = 0
   connectFailures = new Set<string>()
+  scanError: Error | null = null
   callback: ((snapshot: { state: SensorConnectionState }) => void) | null = null
 
-  async scan(): Promise<SensorDevice[]> { this.scanCount += 1; return this.scans.shift() ?? [] }
+  async scan(): Promise<SensorDevice[]> {
+    this.scanCount += 1
+    if (this.scanError) throw this.scanError
+    return this.scans.shift() ?? []
+  }
   async connect(deviceId: string): Promise<void> {
     this.connected.push(deviceId)
     if (this.connectFailures.has(deviceId)) throw new Error(`连接 ${deviceId} 失败`)
@@ -83,6 +89,17 @@ describe('SensorConnectionManager', () => {
 
     expect(sensor.scanCount).toBe(0)
     expect(sensor.connected).toEqual([])
+  })
+
+  it('权限或蓝牙关闭属于终止错误，不执行后续退避重试', async () => {
+    const sensor = new FakeSensor()
+    sensor.scanError = new SensorTransportError('permission-denied', '请允许附近设备权限。')
+    const manager = new SensorConnectionManager(sensor, new BindingRepository(boundDevice), async () => {})
+    await manager.initialize()
+    await manager.startupConnect()
+
+    expect(sensor.scanCount).toBe(1)
+    expect(manager.getSnapshot()).toMatchObject({ reconnectState: 'waiting-user', message: '请允许附近设备权限。' })
   })
 
   it('首次设置发现设备时同样采用有限扫描，并在发现后立即停止重试', async () => {

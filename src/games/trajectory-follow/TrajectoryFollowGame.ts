@@ -35,6 +35,7 @@ export class TrajectoryFollowGame implements ITrainingGame<TrajectoryFollowTrain
   private playerGraphic: Graphics | null = null
   private guideGraphic: Graphics | null = null
   private countdownText: Text | null = null
+  private resizeObserver: ResizeObserver | null = null
 
   constructor(
     private readonly config: TrajectoryFollowGameConfig = structuredClone(defaultTrajectoryFollowGameConfig),
@@ -54,6 +55,12 @@ export class TrajectoryFollowGame implements ITrainingGame<TrajectoryFollowTrain
     this.countdownText.anchor.set(0.5)
     app.stage.addChild(this.referenceGraphic, this.trailGraphic, this.guideGraphic, this.playerGraphic, this.countdownText)
     this.app = app
+    // Reference Path 是静态图层，横竖屏切换后必须用新画布尺寸重新绘制。
+    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => {
+      this.drawReferencePath()
+      this.render(performance.now())
+    }))
+    this.resizeObserver.observe(container)
     app.ticker.add(() => {
       const now = performance.now()
       this.update(now)
@@ -107,6 +114,8 @@ export class TrajectoryFollowGame implements ITrainingGame<TrajectoryFollowTrain
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.referenceGraphic = null

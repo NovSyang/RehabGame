@@ -3,6 +3,7 @@ import type { DeviceBinding, IDeviceBindingRepository } from './DeviceBinding'
 import { matchBoundDevice } from './DeviceBinding'
 import type { SensorDevice } from './SensorDevice'
 import type { ConnectionOperation } from './ConnectionOperation'
+import { isTerminalSensorTransportError } from './SensorTransportError'
 
 /** 自动恢复连接的独立状态，不与底层 BLE 状态混在一起。 */
 export type ReconnectState = 'idle' | 'reconnecting' | 'waiting-user'
@@ -193,8 +194,12 @@ export class SensorConnectionManager {
         const devices = await this.sensor.scan()
         if (!this.isWorkflowCurrent(workflowId)) return []
         if (devices.length > 0) return devices
-      } catch {
-        // 单轮扫描失败后继续有限次数重试，页面只显示最终可读错误。
+      } catch (error) {
+        // 权限和蓝牙开关不会通过短时间重试恢复，立即交给用户处理。
+        if (isTerminalSensorTransportError(error)) {
+          this.finishWaitingUser(error.message)
+          throw error
+        }
       }
     }
     return []
@@ -235,7 +240,13 @@ export class SensorConnectionManager {
         if (!device) continue
         await this.connectAndSave(device, workflowId)
         return
-      } catch { /* 本轮失败后按照退避策略继续尝试。 */ }
+      } catch (error) {
+        if (isTerminalSensorTransportError(error)) {
+          this.finishWaitingUser(error.message)
+          return
+        }
+        // 普通扫描或连接失败后仍按照既有退避策略继续尝试。
+      }
     }
     if (this.isWorkflowCurrent(workflowId)) {
       this.finishWaitingUser('未能连接训练设备，请点击右上角设备状态重新连接或更换设备。')

@@ -4,6 +4,7 @@ import { trainingRepository } from '../app/AppServices'
 import TrainingGameHistoryCard from '../components/history/TrainingGameHistoryCard.vue'
 import TrainingHistoryDialog from '../components/history/TrainingHistoryDialog.vue'
 import TrainingRecordTable from '../components/history/TrainingRecordTable.vue'
+import TrainingRecordCardList from '../components/history/TrainingRecordCardList.vue'
 import { buildTrainingHistoryGroups } from '../core/history/TrainingHistoryGroup'
 import type { TrainingRecord } from '../core/training/TrainingRecord'
 import { getGameModule } from '../games/GameRegistry'
@@ -77,7 +78,7 @@ function formatError(error: unknown): string { return error instanceof Error ? e
     <p v-if="errorMessage" class="error history-page-error">{{ errorMessage }}</p>
     <p v-if="!records.length" class="muted history-empty">暂无已保存训练记录。</p>
     <div v-else-if="!selectedGroup" class="history-game-grid"><TrainingGameHistoryCard v-for="group in groups" :key="group.gameId" :group="group" @select="selectGame" /></div>
-    <TrainingRecordTable v-else :records="selectedGroup.records" @detail="selectedRecord = $event" @delete="remove" />
+    <template v-else><TrainingRecordTable class="history-desktop-records" :records="selectedGroup.records" @detail="selectedRecord = $event" @delete="remove" /><TrainingRecordCardList class="history-mobile-records" :records="selectedGroup.records" @detail="selectedRecord = $event" @delete="remove" /></template>
 
     <TrainingHistoryDialog v-if="selectedRecord" :record="selectedRecord" @close="selectedRecord = null" />
   </main>

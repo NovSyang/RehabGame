@@ -25,6 +25,7 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
   private playerGraphic: Graphics | null = null
   private guideGraphic: Graphics | null = null
   private listeners = new Set<(snapshot: ReplayPlayerSnapshot) => void>()
+  private resizeObserver: ResizeObserver | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -37,6 +38,9 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
     this.playerGraphic = new Graphics()
     app.stage.addChild(this.referenceGraphic, this.patientPathGraphic, this.guideGraphic, this.playerGraphic)
     this.app = app
+    // 参考路径和患者完整轨迹在弹窗尺寸变化后按新画布重新绘制。
+    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render()))
+    this.resizeObserver.observe(container)
     app.ticker.add(() => this.tick(performance.now()))
     this.render()
   }
@@ -99,6 +103,8 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.referenceGraphic = null
