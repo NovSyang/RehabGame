@@ -81,6 +81,29 @@ describe('CapacitorBleTransport', () => {
     expect(fake.spies.write).not.toHaveBeenCalled()
   })
 
+  it('通知数据使用注入时钟生成 Unix Epoch 时间戳', async () => {
+    const fake = fakeClient()
+    const fixedEpochMs = 1_777_000_000_000
+    const transport = new CapacitorBleTransport(
+      fake.client,
+      async () => undefined,
+      () => fixedEpochMs,
+    )
+    const packets: Array<{ data: number[]; timestamp: number }> = []
+    transport.onData((packet) => packets.push({
+      data: [...packet.data],
+      timestamp: packet.timestamp,
+    }))
+
+    await transport.connect('device-1')
+    const bytes = Uint8Array.from([0x55, 0x61])
+    fake.emitData(new DataView(bytes.buffer))
+    bytes[0] = 0
+
+    // 数据副本不受 Native 缓冲区复用影响，时间戳与 Date.now() 属于同一时钟域。
+    expect(packets).toEqual([{ data: [0x55, 0x61], timestamp: fixedEpochMs }])
+  })
+
   it('已连接时扫描新设备，完成后恢复 connected 而不是丢失旧连接状态', async () => {
     const fake = fakeClient()
     const transport = new CapacitorBleTransport(fake.client, async () => undefined)

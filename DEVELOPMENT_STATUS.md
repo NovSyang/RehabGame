@@ -199,7 +199,8 @@
 - [x] 接入 Capacitor 8、Android 工程、App、Screen Orientation、BLE 与 Keep Awake 插件
 - [x] 固定 `com.rehabgame.app`、`RehabGame` 和 `dist` Web 产物目录
 - [x] 完成前端构建与 `cap sync android`
-- [ ] 生成并在真机安装 Debug APK
+- [x] 生成 Debug APK
+- [ ] 在 Android 真机安装并启动 Debug APK
 
 ### 平台抽象与 Android BLE
 
@@ -210,6 +211,14 @@
 - [x] 权限拒绝、永久拒绝、蓝牙关闭终止重试，普通错误保留有限退避
 - [x] 连接、断线、Battery 命令与现有 ConnectionManager/SensorService 链路复用
 - [ ] 真机验证 Scan、Connect、约 50Hz、Battery、Reconnect、Switch 与 Forget
+
+### Android ROM Timestamp Fix
+
+- [x] 明确 `SensorDataPacket.timestamp` 为 Unix Epoch 毫秒
+- [x] Capacitor Notify 使用可测试的 `Date.now()` 时钟
+- [x] 增加 Capacitor Timestamp Contract 与 ROM Timestamp Integration 测试
+- [ ] Android 前、后、左、右 ROM 实机采样回归
+- [ ] Battery Updated、TargetReach 与 TrajectoryFollow 实机回归
 
 ### Responsive 与移动训练
 
@@ -222,11 +231,11 @@
 
 ### 自动验证与交付边界
 
-- [x] 32 个测试文件、132 项单元测试通过
+- [x] 33 个测试文件、135 项单元测试通过
 - [x] `npm run build` 与 Capacitor Sync 通过
 - [x] `npm run tauri:build` 回归
-- [ ] Android Debug APK、未签名 Release APK 与未签名 AAB 构建
-  - 当前阻塞：Gradle 8.14.3 官方分发包在本机网络下多次连接/读取超时，尚未进入项目编译阶段
+- [x] Android Debug APK 构建
+- [ ] 未签名 Release APK 与未签名 AAB 构建
 - [ ] Android localStorage、IndexedDB、History 与 Replay 跨 Force Stop 验证
 - [ ] Android 30 分钟 BLE、Battery Timer、Pixi、Observer 与内存稳定性
 - [ ] 正式 keystore、Signed Release APK 与签名包实机验收（本轮明确延期）

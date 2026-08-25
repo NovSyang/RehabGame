@@ -14,6 +14,7 @@ const WRITE_UUID = '0000ffe9-0000-1000-8000-00805f9a34fb'
 const SCAN_DURATION_MS = 3_000
 
 type DelayFunction = (milliseconds: number) => Promise<void>
+type Clock = () => number
 
 /** Capacitor 只负责 Android Native BLE，协议解析和业务重连继续复用 Core。 */
 export class CapacitorBleTransport implements ISensorTransport {
@@ -31,6 +32,8 @@ export class CapacitorBleTransport implements ISensorTransport {
   constructor(
     private readonly client: BleClientInterface = BleClient,
     private readonly delay: DelayFunction = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+    // Android 数据包必须使用 Epoch 毫秒，才能与 ROM 页面和 Windows 时间戳直接比较。
+    private readonly now: Clock = Date.now,
   ) {}
 
   async scan(): Promise<SensorDevice[]> {
@@ -150,7 +153,7 @@ export class CapacitorBleTransport implements ISensorTransport {
   private publishData(value: DataView): void {
     // Native DataView 可能复用底层缓冲区，进入 Core 前必须复制成独立数据包。
     const source = new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
-    const packet: SensorDataPacket = { data: Uint8Array.from(source), timestamp: performance.now() }
+    const packet: SensorDataPacket = { data: Uint8Array.from(source), timestamp: this.now() }
     for (const callback of this.dataCallbacks) callback(packet)
   }
 
