@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import DeviceView from '../views/DeviceView.vue'
+import { initializeAppServices, motionProfileService } from './AppServices'
+import DeveloperDebugView from '../views/DeveloperDebugView.vue'
+import FirstRunSetupView from '../views/FirstRunSetupView.vue'
 import GameSelectView from '../views/GameSelectView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import ResultView from '../views/ResultView.vue'
@@ -11,14 +13,25 @@ import TrainingView from '../views/TrainingView.vue'
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', redirect: '/device' },
-    { path: '/device', component: DeviceView },
+    { path: '/', redirect: '/games' },
+    { path: '/device', redirect: '/games' },
+    { path: '/setup', component: FirstRunSetupView },
     { path: '/rom-calibration', component: RomCalibrationView },
     { path: '/games', component: GameSelectView },
     { path: '/training/target-reach', component: TrainingView },
     { path: '/result', component: ResultView },
     { path: '/history', component: HistoryView },
     { path: '/settings', component: SettingsView },
-    { path: '/:pathMatch(.*)*', redirect: '/device' },
+    { path: '/settings/debug', component: DeveloperDebugView },
+    { path: '/:pathMatch(.*)*', redirect: '/games' },
   ],
+})
+
+/** 仅正常训练入口需要个人 ROM；历史和设置永远可以直接访问。 */
+router.beforeEach(async (to) => {
+  await initializeAppServices()
+  if (to.path === '/games' && motionProfileService.getCurrent().measuredRange === null) {
+    return { path: '/setup' }
+  }
+  return true
 })

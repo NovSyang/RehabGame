@@ -21,6 +21,9 @@ button, select { font: inherit; }
 }
 .app-nav a { color: #9fb0c4; text-decoration: none; font-size: 14px; }
 .app-nav a.router-link-active { color: #8fd8ff; font-weight: 700; }
+.device-status { display: flex; align-items: center; gap: 7px; margin-left: auto; color: #fc8181; font-size: 13px; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.device-status[data-connected="true"] { color: #68d391; }
 .app-error { margin: 12px 28px 0; }
 .content-page { min-height: calc(100vh - 52px); padding: 36px max(28px, calc((100vw - 1000px) / 2)); background: radial-gradient(circle at 80% 10%, #15243b 0, #07101d 40%); }
 .content-page > .card, .content-page > .history-list { margin-top: 18px; }
@@ -133,6 +136,14 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .training-toolbar h1 { margin: 4px 0; }
 .training-host { min-height: calc(100vh - 160px); }
 .scoreboard { display: flex; gap: 14px; color: #b9d6ff; font-weight: 700; }
+.training-shell { position: relative; }
+.training-overlay { position: absolute; z-index: 3; inset: 120px 10% 40px; display: grid; place-items: center; background: rgba(4, 13, 24, .68); border-radius: 20px; }
+.center-guide { width: min(520px, 90%); padding: 26px; border: 1px solid #34506f; border-radius: 18px; background: #0f1b2c; box-shadow: 0 20px 60px rgba(0,0,0,.38); }
+.center-guide h2 { margin-top: 0; }
+.center-guide p { color: #b8c6d8; line-height: 1.7; }
+.calibration-progress { height: 10px; overflow: hidden; border-radius: 99px; background: #0a1727; }
+.calibration-progress span { display: block; height: 100%; background: #4da3ff; transition: width .15s linear; }
+.success-text { color: #68d391; }
 
 .result-shell { display: grid; place-items: center; }
 .result-card { width: min(900px, 100%); padding: 32px; border: 1px solid #263952; border-radius: 22px; background: rgba(15, 27, 44, .94); }

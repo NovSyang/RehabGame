@@ -26,12 +26,13 @@ export const latestTrainingRecord = ref<TrainingRecord | null>(null)
 
 let initialized: Promise<void> | null = null
 
-/** 首次加载 Profile、绑定并安全尝试恢复已绑定设备。 */
+/** 首次加载 Profile、绑定并后台尝试恢复已绑定设备。 */
 export function initializeAppServices(): Promise<void> {
   initialized ??= (async () => {
     await motionProfileService.load()
     await connectionManager.initialize()
-    await connectionManager.reconnectBoundDevice()
+    // 自动连接可能执行 1/2/5 秒退避，不能阻塞历史与设置页面。
+    void connectionManager.reconnectBoundDevice()
   })()
   return initialized
 }
