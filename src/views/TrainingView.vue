@@ -52,7 +52,7 @@ onMounted(async () => {
     // 每局都清除旧 Zero，避免复用上一局的自然中心。
     sensorService.resetCalibration()
     preflight.value = connected.value ? 'center-guide' : 'device-required'
-    if (!connected.value) void connectionManager.reconnectBoundDevice()
+    if (!connected.value) void connectionManager.reconnectNow()
   } catch (error) { errorMessage.value = formatError(error) }
 })
 onBeforeUnmount(() => { unsubscribe?.(); game.destroy() })
@@ -70,7 +70,7 @@ function centerCompleted(): void {
     preflight.value = 'playing'
   } catch (error) { errorMessage.value = formatError(error) }
 }
-function retryConnection(): void { errorMessage.value = ''; void connectionManager.reconnectBoundDevice() }
+function retryConnection(): void { errorMessage.value = ''; void connectionManager.reconnectNow() }
 function togglePause(): void { try { trainingState.value === 'playing' ? game.pause() : game.resume() } catch (error) { errorMessage.value = formatError(error) } }
 function abort(): void { game.abort(); void router.push('/games') }
 async function completeTraining(result: Parameters<NonNullable<typeof game['events']['onCompleted']>>[0]): Promise<void> {

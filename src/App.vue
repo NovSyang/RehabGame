@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { connectionManager, initializeAppServices, transport } from './app/AppServices'
+import DeviceConnectionLoading from './components/app/DeviceConnectionLoading.vue'
 import DeviceConnectionStatus from './components/app/DeviceConnectionStatus.vue'
 
 const startupError = ref('')
@@ -25,6 +26,7 @@ onBeforeUnmount(async () => {
     <RouterLink to="/settings">设置</RouterLink>
     <DeviceConnectionStatus />
   </header>
+  <DeviceConnectionLoading />
   <p v-if="startupError" class="error app-error">{{ startupError }}</p>
   <RouterView />
 </template>

@@ -119,13 +119,16 @@ async fn ble_connect(
         None => create_adapter().await?,
     };
 
-    adapter
-        .start_scan(ScanFilter::default())
-        .await
-        .map_err(|e| e.to_string())?;
-    tokio::time::sleep(Duration::from_secs(2)).await;
-
-    let peripherals = adapter.peripherals().await.map_err(|e| e.to_string())?;
+    // 扫描命令刚执行过时，适配器通常已缓存目标设备，先复用可减少一次固定等待。
+    let mut peripherals = adapter.peripherals().await.map_err(|e| e.to_string())?;
+    if !peripherals.iter().any(|p| p.id().to_string() == device_id) {
+        adapter
+            .start_scan(ScanFilter::default())
+            .await
+            .map_err(|e| e.to_string())?;
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        peripherals = adapter.peripherals().await.map_err(|e| e.to_string())?;
+    }
     let peripheral = peripherals
         .into_iter()
         .find(|p| p.id().to_string() == device_id)
