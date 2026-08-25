@@ -1,4 +1,4 @@
-# 开发状态 V0.6
+# 开发状态 V0.7
 
 ## V0.1 已完成
 
@@ -131,7 +131,7 @@
 - [x] 使用真实 BS-BT91 与厂家软件确认 Raw `391 → 75%`、`389 → 70%`
 - [x] 根据厂家电压表实现 Battery Percent Decoder（边界值归入较高电压档）
 
-## V0.6 待实机验收
+## V0.6 完成实机验收
 
 ### Closing Batch 代码与自动验证
 
@@ -144,3 +144,38 @@
 - [x] 右上角手动重连、更换设备取消/失败回滚和忘记设备流程
 - [x] 训练中异常断线自动恢复、重新中心校准与 Replay 有效时长回归
 - [x] Tauri Windows 环境连续运行与真实 BS-BT91 蓝牙扫描性能确认
+
+## V0.7 已实现
+
+### 多游戏训练框架
+
+- [x] BaseTrainingResult、ITrainingGame、TrainingGameEvents 与通用 HUD
+- [x] GameModule、GameRegistry、唯一 ID 检查与动态 `/training/:gameId` 路由
+- [x] TrainingRecord 泛型化与通用 persistTrainingResult，IndexedDB 版本保持不变
+- [x] 通用 Result、History、TrainingSummary 与 Replay Player 契约
+- [x] TargetReach Result、Presenter、HUD Adapter 与 Replay Factory 迁移
+- [x] 手动/断线 PauseReason、倒计时断线冻结与重新中心校准恢复
+
+### Trajectory Follow
+
+- [x] 60 秒 8 字轨迹、25Hz 参考样本与有效训练时间轴
+- [x] PixiJS Reference、Guide、Player 与 2.5 秒患者尾迹
+- [x] 平均/最大归一化误差、范围内比例与范围内时间统计
+- [x] 保存 reference-path 历史事实，不使用新版本公式重算旧训练
+- [x] 动态回放、Seek、0.5x/1x/2x 与完整患者/参考轨迹
+- [x] Vue Proxy 与嵌套 Replay Payload 的安全普通对象复制
+
+### 自动验证
+
+- [x] 28 个测试文件、116 项单元测试通过
+- [x] `npm run build` 通过
+- [x] `npm run tauri:build` 最终验证
+
+## V0.7 待实机验收
+
+- [x] 使用真实 BS-BT91 分别完成 TargetReach 与 TrajectoryFollow
+- [x] 验证不同个人 ROM 下 8 字轨迹方向、幅度与中心穿越
+- [x] 验证手动暂停、断线恢复、重新中心校准和有效时间连续性
+- [x] 验证旧 V1/V2 TargetReach 与 V0.7 两款游戏混合历史
+- [x] 验证两类动态/完整回放、Seek、倍速和重复开关无资源残留
+- [x] 连续运行至少 30 分钟，确认 BLE、Battery Timer、Pixi Ticker 与内存稳定

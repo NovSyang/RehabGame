@@ -15,6 +15,8 @@ export class TrainingSession {
   private countdownStartedAt = 0
   private playingStartedAt = 0
   private pausedAt = 0
+  private pausedFrom: 'countdown' | 'playing' | null = null
+  private pausedCountdownRemainingMs = 0
   private totalPausedMs = 0
   private completedAt: number | null = null
 
@@ -23,6 +25,8 @@ export class TrainingSession {
     this.countdownStartedAt = now
     this.playingStartedAt = this.countdownDurationMs === 0 ? now : 0
     this.pausedAt = 0
+    this.pausedFrom = null
+    this.pausedCountdownRemainingMs = 0
     this.totalPausedMs = 0
     this.completedAt = null
     this.state = this.countdownDurationMs === 0 ? 'playing' : 'countdown'
@@ -36,16 +40,28 @@ export class TrainingSession {
   }
 
   pause(now = performance.now()): void {
-    if (this.state !== 'playing') return
+    if (this.state !== 'playing' && this.state !== 'countdown') return
+    this.pausedFrom = this.state
+    if (this.state === 'countdown') {
+      // 断线可能发生在 3 秒倒计时内，保存剩余时间后才能安全恢复。
+      this.pausedCountdownRemainingMs = Math.max(0, this.countdownDurationMs - (now - this.countdownStartedAt))
+    }
     this.pausedAt = now
     this.state = 'paused'
   }
 
   resume(now = performance.now()): void {
     if (this.state !== 'paused') return
-    this.totalPausedMs += now - this.pausedAt
+    if (this.pausedFrom === 'countdown') {
+      this.countdownStartedAt = now - (this.countdownDurationMs - this.pausedCountdownRemainingMs)
+      this.state = 'countdown'
+    } else {
+      this.totalPausedMs += now - this.pausedAt
+      this.state = 'playing'
+    }
     this.pausedAt = 0
-    this.state = 'playing'
+    this.pausedFrom = null
+    this.pausedCountdownRemainingMs = 0
   }
 
   complete(now = performance.now()): void {
@@ -63,6 +79,8 @@ export class TrainingSession {
     this.countdownStartedAt = 0
     this.playingStartedAt = 0
     this.pausedAt = 0
+    this.pausedFrom = null
+    this.pausedCountdownRemainingMs = 0
     this.totalPausedMs = 0
     this.completedAt = null
   }
@@ -70,7 +88,9 @@ export class TrainingSession {
   getSnapshot(now = performance.now()): TrainingSessionSnapshot {
     const countdownRemainingMs = this.state === 'countdown'
       ? Math.max(0, this.countdownDurationMs - (now - this.countdownStartedAt))
-      : 0
+      : this.state === 'paused' && this.pausedFrom === 'countdown'
+        ? this.pausedCountdownRemainingMs
+        : 0
     const end = this.completedAt ?? (this.state === 'paused' ? this.pausedAt : now)
     const playingElapsedMs = this.playingStartedAt === 0
       ? 0
@@ -87,8 +107,10 @@ export class TrainingSession {
   }
 
   private finish(now: number, state: 'completed' | 'aborted'): void {
-    if (this.state === 'paused') this.totalPausedMs += now - this.pausedAt
+    if (this.state === 'paused' && this.pausedFrom === 'playing') this.totalPausedMs += now - this.pausedAt
     this.pausedAt = 0
+    this.pausedFrom = null
+    this.pausedCountdownRemainingMs = 0
     this.completedAt = now
     this.state = state
   }

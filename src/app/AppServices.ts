@@ -8,9 +8,9 @@ import { SensorService } from '../core/sensor/SensorService'
 import { LocalStorageStore } from '../core/storage/LocalStorageStore'
 import { IndexedDbTrainingRepository } from '../core/training/IndexedDbTrainingRepository'
 import type { TrainingRecord } from '../core/training/TrainingRecord'
-import type { TrainingResult } from '../core/training/TrainingResult'
 import type { TrainingReplay } from '../core/replay/TrainingReplay'
-import { defaultTargetReachGameConfig } from '../games/target-reach/TargetReachGameConfig'
+import type { BaseTrainingResult } from '../core/training/BaseTrainingResult'
+import type { GameDefinition } from '../core/game/GameDefinition'
 import { TauriBleTransport } from '../platform/tauri/TauriBleTransport'
 
 /** 应用级单例服务，确保切换页面时不会重复创建 BLE 监听与传感器处理链路。 */
@@ -37,21 +37,23 @@ export function initializeAppServices(): Promise<void> {
   return initialized
 }
 
-/** 将完成结果连同当时配置写入历史，保持历史数据可解释。 */
-export async function persistTargetReachResult(
-  result: TrainingResult,
-  replay: TrainingReplay,
-): Promise<TrainingRecord> {
-  const record: TrainingRecord = {
+/** 将任意正式游戏结果连同当时配置写入同一个历史仓库。 */
+export async function persistTrainingResult<TResult extends BaseTrainingResult, TConfig>(input: {
+  game: GameDefinition
+  result: TResult
+  replay: TrainingReplay
+  gameConfig: TConfig
+}): Promise<TrainingRecord<TResult, TConfig>> {
+  const record: TrainingRecord<TResult, TConfig> = {
     schemaVersion: 2,
     id: createRecordId(),
-    gameId: 'target-reach',
-    gameName: '四方向目标触达',
+    gameId: input.game.id,
+    gameName: input.game.name,
     completedAt: Date.now(),
-    result: structuredClone(result),
+    result: structuredClone(input.result),
     motionProfile: motionProfileService.getCurrent(),
-    gameConfig: structuredClone(defaultTargetReachGameConfig),
-    replay: structuredClone(replay),
+    gameConfig: structuredClone(input.gameConfig),
+    replay: structuredClone(input.replay),
   }
   await trainingRepository.save(record)
   latestTrainingRecord.value = record

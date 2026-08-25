@@ -21,4 +21,16 @@ describe('TrainingSession', () => {
 
     expect(session.getSnapshot(4001).playingElapsedMs).toBe(2000)
   })
+
+  it('倒计时期间暂停会冻结剩余时间并从原位置继续', () => {
+    const session = new TrainingSession()
+    session.start(1000, 3000)
+    session.pause(2000)
+    expect(session.getSnapshot(20_000)).toMatchObject({ state: 'paused', countdownRemainingMs: 2000, playingElapsedMs: 0 })
+    session.resume(20_000)
+    session.update(21_999)
+    expect(session.getSnapshot(21_999).state).toBe('countdown')
+    session.update(22_000)
+    expect(session.getSnapshot(22_000).state).toBe('playing')
+  })
 })

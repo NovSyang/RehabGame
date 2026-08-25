@@ -18,7 +18,7 @@ export const router = createRouter({
     { path: '/setup', component: FirstRunSetupView },
     { path: '/rom-calibration', component: RomCalibrationView },
     { path: '/games', component: GameSelectView },
-    { path: '/training/target-reach', component: TrainingView },
+    { path: '/training/:gameId', component: TrainingView },
     { path: '/result', component: ResultView },
     { path: '/history', component: HistoryView },
     { path: '/settings', component: SettingsView },
@@ -30,7 +30,7 @@ export const router = createRouter({
 /** 仅正常训练入口需要个人 ROM；历史和设置永远可以直接访问。 */
 router.beforeEach(async (to) => {
   await initializeAppServices()
-  if (to.path === '/games' && motionProfileService.getCurrent().measuredRange === null) {
+  if ((to.path === '/games' || to.path.startsWith('/training/')) && motionProfileService.getCurrent().measuredRange === null) {
     return { path: '/setup' }
   }
   return true

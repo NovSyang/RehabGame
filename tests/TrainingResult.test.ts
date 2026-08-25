@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { buildTrainingResult, type TargetAttemptResult } from '../src/core/training/TrainingResult'
+import { buildTargetReachTrainingResult, type TargetAttemptResult } from '../src/games/target-reach/TargetReachTrainingResult'
 
-describe('buildTrainingResult', () => {
+describe('buildTargetReachTrainingResult', () => {
   it('汇总成功率、平均时间和方向统计', () => {
     const attempts: TargetAttemptResult[] = [
       {
@@ -14,7 +14,7 @@ describe('buildTrainingResult', () => {
       },
     ]
 
-    const result = buildTrainingResult(0, 1600, 1600, attempts)
+    const result = buildTargetReachTrainingResult(0, 1600, 1600, attempts)
 
     expect(result.successRate).toBe(0.5)
     expect(result.averageReactionTimeMs).toBe(100)

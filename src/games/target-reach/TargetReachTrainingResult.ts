@@ -1,4 +1,5 @@
-import { ALL_DIRECTIONS, type Direction } from './Direction'
+import type { BaseTrainingResult } from '../../core/training/BaseTrainingResult'
+import { ALL_DIRECTIONS, type Direction } from '../../core/training/Direction'
 
 export interface TargetAttemptResult {
   index: number
@@ -20,10 +21,8 @@ export interface DirectionSummary {
   averageReachTimeMs: number | null
 }
 
-export interface TrainingResult {
-  startedAt: number
-  endedAt: number
-  durationMs: number
+/** TargetReach 专属结果；字段保持不变以兼容已有 IndexedDB 记录。 */
+export interface TargetReachTrainingResult extends BaseTrainingResult {
   totalTargets: number
   successTargets: number
   failedTargets: number
@@ -34,52 +33,42 @@ export interface TrainingResult {
   attempts: TargetAttemptResult[]
 }
 
-/** 根据每个目标的记录生成供结果页展示的汇总数据。 */
-export function buildTrainingResult(
+/** 从目标尝试事实生成稳定的 TargetReach 汇总结果。 */
+export function buildTargetReachTrainingResult(
   startedAt: number,
   endedAt: number,
   durationMs: number,
   attempts: TargetAttemptResult[],
-): TrainingResult {
-  const directions = createDirectionSummaries()
+): TargetReachTrainingResult {
+  const directions = emptyDirectionSummaries()
   for (const attempt of attempts) {
     const summary = directions[attempt.direction]
     summary.total += 1
-    if (attempt.success) summary.success += 1
-    else summary.failed += 1
+    attempt.success ? summary.success += 1 : summary.failed += 1
   }
-
   for (const direction of ALL_DIRECTIONS) {
-    const reachTimes = attempts
-      .filter((attempt) => attempt.direction === direction && attempt.reachTimeMs !== null)
-      .map((attempt) => attempt.reachTimeMs as number)
-    directions[direction].averageReachTimeMs = averageOrNull(reachTimes)
+    directions[direction].averageReachTimeMs = averageOrNull(
+      attempts.filter((attempt) => attempt.direction === direction && attempt.reachTimeMs !== null)
+        .map((attempt) => attempt.reachTimeMs as number),
+    )
   }
-
   const successTargets = attempts.filter((attempt) => attempt.success).length
-  const reactionTimes = attempts
-    .map((attempt) => attempt.reactionTimeMs)
-    .filter((value): value is number => value !== null)
-  const reachTimes = attempts
-    .map((attempt) => attempt.reachTimeMs)
-    .filter((value): value is number => value !== null)
-
   return {
     startedAt,
     endedAt,
-    durationMs,
+    durationMs: Math.max(0, durationMs),
     totalTargets: attempts.length,
     successTargets,
     failedTargets: attempts.length - successTargets,
     successRate: attempts.length === 0 ? 0 : successTargets / attempts.length,
-    averageReactionTimeMs: averageOrNull(reactionTimes),
-    averageReachTimeMs: averageOrNull(reachTimes),
+    averageReactionTimeMs: averageOrNull(attempts.filter((attempt) => attempt.reactionTimeMs !== null).map((attempt) => attempt.reactionTimeMs as number)),
+    averageReachTimeMs: averageOrNull(attempts.filter((attempt) => attempt.reachTimeMs !== null).map((attempt) => attempt.reachTimeMs as number)),
     directions,
-    attempts: [...attempts],
+    attempts: structuredClone(attempts),
   }
 }
 
-function createDirectionSummaries(): Record<Direction, DirectionSummary> {
+function emptyDirectionSummaries(): Record<Direction, DirectionSummary> {
   return {
     left: { total: 0, success: 0, failed: 0, averageReachTimeMs: null },
     right: { total: 0, success: 0, failed: 0, averageReachTimeMs: null },
@@ -89,6 +78,5 @@ function createDirectionSummaries(): Record<Direction, DirectionSummary> {
 }
 
 function averageOrNull(values: number[]): number | null {
-  if (values.length === 0) return null
-  return values.reduce((sum, value) => sum + value, 0) / values.length
+  return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length
 }

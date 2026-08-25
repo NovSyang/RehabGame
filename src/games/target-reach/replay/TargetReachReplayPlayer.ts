@@ -1,16 +1,11 @@
 import { Application, Container, Graphics, Text } from 'pixi.js'
-import { clamp, downsampleForDisplay, sampleAtElapsed } from '../../../core/replay/ReplayMath'
+import type { ITrainingReplayPlayer, ReplayMode, ReplayPlayerSnapshot, ReplayPlayerState } from '../../../core/replay/ITrainingReplayPlayer'
+import { downsampleForDisplay, sampleAtElapsed } from '../../../core/replay/ReplayMath'
+import { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 import type { ReplayEvent, TrainingReplay } from '../../../core/replay/TrainingReplay'
 
-export type ReplayPlayerState = 'idle' | 'playing' | 'paused' | 'ended'
-export type ReplayMode = 'dynamic' | 'trajectory'
-
-export interface ReplayPlayerSnapshot {
-  state: ReplayPlayerState
-  currentTimeMs: number
-  durationMs: number
-  playbackRate: number
-}
+export type { ReplayMode, ReplayPlayerSnapshot, ReplayPlayerState } from '../../../core/replay/ITrainingReplayPlayer'
+export { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 
 interface HistoricalTarget {
   index: number
@@ -23,7 +18,7 @@ interface HistoricalTarget {
  * 只绘制已保存的 TargetReach 历史事实。
  * 它不会生成随机目标、连接 BLE 或重新执行任何命中判定。
  */
-export class TargetReachReplayPlayer {
+export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   private app: Application | null = null
   private replay: TrainingReplay | null = null
   private mode: ReplayMode = 'dynamic'
@@ -234,64 +229,6 @@ export class TargetReachReplayPlayer {
   private clearLabels(): void { this.labels.removeChildren().forEach((label) => label.destroy()) }
 
   private publish(): void { const snapshot = this.getSnapshot(); for (const callback of this.listeners) callback(snapshot) }
-}
-
-/**
- * 将回放数据转换为播放器独立的普通对象快照。
- * TargetReach V0.4 的事件 payload 只需要基础值，因此不接收函数、DOM 或 Window 引用。
- */
-export function copyTrainingReplay(replay: TrainingReplay): TrainingReplay {
-  const source = replay as Partial<TrainingReplay>
-  return {
-    schemaVersion: 1,
-    durationMs: nonNegativeInteger(source.durationMs),
-    sampleRateHz: nonNegativeInteger(source.sampleRateHz),
-    samples: Array.isArray(source.samples)
-      ? source.samples.map(copySample).filter((sample): sample is TrainingReplay['samples'][number] => sample !== null)
-      : [],
-    events: Array.isArray(source.events)
-      ? source.events.map(copyEvent).filter((event): event is ReplayEvent => event !== null)
-      : [],
-  }
-}
-
-function copySample(value: unknown): TrainingReplay['samples'][number] | null {
-  if (!value || typeof value !== 'object') return null
-  const sample = value as Partial<TrainingReplay['samples'][number]>
-  const { elapsedMs, x, y } = sample
-  if (typeof elapsedMs !== 'number' || typeof x !== 'number' || typeof y !== 'number') return null
-  if (!Number.isFinite(elapsedMs) || !Number.isFinite(x) || !Number.isFinite(y)) return null
-  return {
-    elapsedMs: nonNegativeInteger(elapsedMs),
-    x: clamp(x, -1, 1),
-    y: clamp(y, -1, 1),
-  }
-}
-
-function copyEvent(value: unknown): ReplayEvent | null {
-  if (!value || typeof value !== 'object') return null
-  const event = value as Partial<ReplayEvent>
-  if (typeof event.type !== 'string' || !Number.isFinite(event.elapsedMs)) return null
-  const payload = copyPayload(event.payload)
-  return payload === undefined
-    ? { elapsedMs: nonNegativeInteger(event.elapsedMs), type: event.type }
-    : { elapsedMs: nonNegativeInteger(event.elapsedMs), type: event.type, payload }
-}
-
-function copyPayload(value: unknown): unknown {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value
-  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
-  const copied: Record<string, string | number | boolean | null> = {}
-  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-    if (item === null || typeof item === 'string' || typeof item === 'boolean') copied[key] = item
-    else if (typeof item === 'number' && Number.isFinite(item)) copied[key] = item
-  }
-  return copied
-}
-
-function nonNegativeInteger(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
 }
 
 function isTargetStart(event: ReplayEvent): event is ReplayEvent & { type: 'target-start'; payload: { index: number; targetX: number; targetY: number } } {

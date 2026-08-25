@@ -1,11 +1,11 @@
-# BS-BT91 康复交互游戏 V0.3
+# BS-BT91 康复交互游戏 V0.7
 
-V0.3 在已完成实机验证的 TargetReach 训练基础上，加入个体化 ROM、BLE 恢复和本地训练历史：
+V0.7 在已完成实机验证的设备、ROM 和训练闭环上，加入通用多游戏框架与第二款正式训练游戏：
 
 ```text
-BS-BT91 → BLE 自动恢复 → 中心 Zero → MotionProfile
-→ MotionProcessor → GameInput → IRehabGame
-→ TargetReachGame → TrainingRecord → History
+BS-BT91 → BLE 自动恢复 → 每局中心 Zero → MotionProfile
+→ MotionProcessor → GameInput → GameRegistry / GameModule
+→ TargetReach 或 TrajectoryFollow → TrainingRecord → History / Replay
 ```
 
 ## 当前能力
@@ -14,9 +14,12 @@ BS-BT91 → BLE 自动恢复 → 中心 Zero → MotionProfile
 - 中心校准与四方向个体 ROM 标定：3 秒采样、前 500ms 忽略、P95 结果。
 - MotionProfile 持久化：保存死区、实测 ROM、训练比例与实际活动范围。
 - 最近设备绑定：按 ID、地址、唯一名称匹配，异常断线按 1/2/5 秒自动重连。
-- 四方向目标触达训练：倒计时、Hold、Timeout、断线暂停和结果统计。
-- IndexedDB 训练历史：结果、Profile 快照、游戏配置快照、详情及单条删除。
-- Vue Router 页面：设备、ROM 标定、游戏、训练、结果、历史和设置。
+- 多游戏训练宿主：动态 HUD、统一中心校准、手动暂停和断线恢复。
+- 四方向目标触达训练：倒计时、Hold、Timeout、方向统计和历史目标回放。
+- 8 字轨迹跟随训练：60 秒连续二维控制、误差与容差范围统计。
+- IndexedDB 混合训练历史：结果、Profile、配置与 25Hz 轨迹事实快照。
+- 双模式历史回放：动态播放、Seek、倍速和完整二维轨迹。
+- 实时电量状态：连接后读取并每 30 秒更新，经厂家分段表解码百分比。
 
 ## 开发环境
 
@@ -34,20 +37,21 @@ npm run tauri:dev
 首次使用：
 
 ```text
-设备页扫描并连接 → 中心校准 → 四方向 ROM 标定 → 选择游戏 → 训练 → 结果与历史
+首次设置连接设备 → 中心确认 → 四方向 ROM 标定 → 选择游戏 → 每局中心校准 → 训练 → 结果与历史
 ```
 
 后续使用：
 
 ```text
-自动尝试恢复上次设备 → 中心校准 → 选择游戏 → 训练
+后台恢复上次设备 → 选择游戏 → 每局中心校准 → 训练
 ```
 
 浏览器仅用于界面预览；真实 BS-BT91 扫描、自动重连和实机训练必须在 `npm run tauri:dev` 打开的 Tauri 桌面窗口内进行。
 
-## V0.3 实机验收
+## V0.7 实机验收重点
 
-1. 每个方向至少重复三次 ROM 标定，确认结果量级稳定且无串轴。
-2. 重启应用，确认 MotionProfile、设备绑定和训练历史仍存在。
-3. 训练中关闭设备，确认游戏暂停、1/2/5 秒重连、重连后要求重新中心校准。
-4. 连续运行至少 30 分钟，观察数据频率、卡顿与历史记录正确性。
+1. 分别完成 TargetReach 和 TrajectoryFollow，确认两款游戏方向与个人 ROM 一致。
+2. TrajectoryFollow 暂停或断线后，引导点时间轴不跳跃，重新中心校准后继续原会话。
+3. 历史同时查看旧 TargetReach、新 TargetReach 和 TrajectoryFollow 记录。
+4. 验证两款游戏的动态回放、Seek、倍速、完整轨迹及弹窗反复开关资源释放。
+5. 连续运行至少 30 分钟，观察 BLE、电量轮询、Pixi Ticker 和内存稳定性。

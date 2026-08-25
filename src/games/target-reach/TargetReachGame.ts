@@ -1,22 +1,23 @@
 import { Application, Graphics, Text } from 'pixi.js'
 import type { GameInput } from '../../core/game-input/GameInput'
-import type { IRehabGame } from '../../core/game/IRehabGame'
+import type { ITrainingGame } from '../../core/game/ITrainingGame'
 import type { Direction } from '../../core/training/Direction'
 import { TrainingSession } from '../../core/training/TrainingSession'
 import type { TrainingSessionState } from '../../core/training/TrainingSessionState'
-import {
-  buildTrainingResult,
-  type TargetAttemptResult,
-} from '../../core/training/TrainingResult'
 import {
   defaultTargetReachGameConfig,
   type TargetReachGameConfig,
 } from './TargetReachGameConfig'
 import type { TargetReachGameEvents } from './TargetReachGameEvents'
 import { distanceBetween, getTargetPosition } from './TargetReachMath'
+import {
+  buildTargetReachTrainingResult,
+  type TargetAttemptResult,
+  type TargetReachTrainingResult,
+} from './TargetReachTrainingResult'
 
 /** 使用归一化 GameInput 完成四方向目标触达训练的 PixiJS 游戏。 */
-export class TargetReachGame implements IRehabGame {
+export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult> {
   private app: Application | null = null
   private session = new TrainingSession()
   private latestInput: GameInput = emptyGameInput()
@@ -75,7 +76,8 @@ export class TargetReachGame implements IRehabGame {
 
   setInput(input: GameInput): void {
     this.latestInput = input
-    if (!input.connected && this.session.getSnapshot().state === 'playing') this.pause()
+    const state = this.session.getSnapshot().state
+    if (!input.connected && (state === 'playing' || state === 'countdown')) this.pause()
   }
 
   start(): void {
@@ -91,7 +93,8 @@ export class TargetReachGame implements IRehabGame {
   }
 
   pause(now = performance.now()): void {
-    if (this.session.getSnapshot(now).state !== 'playing') return
+    const state = this.session.getSnapshot(now).state
+    if (state !== 'playing' && state !== 'countdown') return
     // 暂停会打断连续保持，恢复后必须重新满足完整 Hold 时间。
     this.targetHoldStartedElapsedMs = null
     this.events.onReplayEvent?.({ elapsedMs: this.getTrainingElapsedMs(now), type: 'pause' })
@@ -225,7 +228,7 @@ export class TargetReachGame implements IRehabGame {
     if (this.target) this.target.visible = false
     if (this.directionText) this.directionText.visible = false
     const snapshot = this.session.getSnapshot(now)
-    const result = buildTrainingResult(
+    const result = buildTargetReachTrainingResult(
       snapshot.startedAt ?? now,
       snapshot.completedAt ?? now,
       snapshot.playingElapsedMs,

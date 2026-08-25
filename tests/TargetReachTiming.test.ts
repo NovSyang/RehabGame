@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GameInput } from '../src/core/game-input/GameInput'
 import { TrainingSession } from '../src/core/training/TrainingSession'
-import type { TargetAttemptResult } from '../src/core/training/TrainingResult'
+import type { TargetAttemptResult } from '../src/games/target-reach/TargetReachTrainingResult'
 import { TargetReachGame } from '../src/games/target-reach/TargetReachGame'
 import type { TargetReachGameConfig } from '../src/games/target-reach/TargetReachGameConfig'
 import type { TargetReachReplayEvent } from '../src/games/target-reach/replay/TargetReachReplayEvent'
