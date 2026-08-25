@@ -3,12 +3,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { connectionManager, motionProfileService, sensorService } from '../app/AppServices'
 import type { SensorRuntimeSnapshot } from '../core/sensor/SensorService'
+import { createEmptyBatteryState } from '../core/sensor/bsbt91/BsBt91Battery'
 import type { SensorDevice } from '../core/sensor/SensorDevice'
 
 const router = useRouter()
 const devices = ref<SensorDevice[]>([])
 const selectedDeviceId = ref('')
-const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '' })
+const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '', battery: createEmptyBatteryState() })
 const reconnectMessage = ref('')
 const busy = ref(false)
 const scanning = ref(false)

@@ -26,6 +26,14 @@ button, select { font: inherit; }
 .device-status:hover { background: #13243a; }
 .status-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
 .device-status[data-connected="true"] { color: #68d391; }
+.battery-status { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; color: #b8c6d8; }
+.battery-status[data-low="true"] { color: #f28b82; }
+.battery-icon { position: relative; display: inline-block; width: 19px; height: 10px; border: 1.5px solid #68d391; border-radius: 2px; }
+.battery-icon::after { content: ''; position: absolute; top: 2px; right: -4px; width: 3px; height: 4px; border-radius: 0 2px 2px 0; background: #68d391; }
+.battery-icon-level { position: absolute; inset: 2px; display: block; overflow: hidden; border-radius: 1px; }
+.battery-icon-level i { display: block; width: var(--battery-fill-width, 0%); height: 100%; border-radius: 1px; background: #68d391; opacity: .9; transition: width .28s ease-out, background-color .2s ease-out; }
+.battery-status[data-low="true"] .battery-icon { border-color: #f28b82; }
+.battery-status[data-low="true"] .battery-icon::after, .battery-status[data-low="true"] .battery-icon-level i { background: #f28b82; }
 .device-status-dropdown { position: absolute; z-index: 30; top: calc(100% + 8px); right: 0; display: grid; width: 150px; padding: 6px; border: 1px solid #34506f; border-radius: 10px; background: #0f1b2c; box-shadow: 0 16px 36px rgba(0,0,0,.35); }
 .dropdown-item { border: 0; border-radius: 7px; padding: 8px 10px; background: transparent; color: #edf2f7; text-align: left; cursor: pointer; }
 .dropdown-item:hover:not(:disabled) { background: #1a304a; }

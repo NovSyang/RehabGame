@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { sensorService } from '../../app/AppServices'
+import { createEmptyBatteryState } from '../../core/sensor/bsbt91/BsBt91Battery'
 import type { SensorRuntimeSnapshot } from '../../core/sensor/SensorService'
 
 const emit = defineEmits<{ completed: []; failed: [] }>()
 const phase = ref<'guide' | 'calibrating' | 'failed'>('guide')
-const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '' })
+const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '', battery: createEmptyBatteryState() })
 const calibration = computed(() => sensorService.motion.getCalibrationSnapshot(snapshot.value.frame?.timestamp ?? Date.now()))
 let unsubscribe: (() => void) | null = null
 let timeoutId: number | null = null

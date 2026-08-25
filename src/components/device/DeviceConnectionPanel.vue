@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { connectionManager, sensorService } from '../../app/AppServices'
 import type { SensorDevice } from '../../core/sensor/SensorDevice'
 import type { SensorRuntimeSnapshot } from '../../core/sensor/SensorService'
+import { createEmptyBatteryState } from '../../core/sensor/bsbt91/BsBt91Battery'
 
 type DeviceConnectionMode = 'initial' | 'replace'
 
@@ -10,7 +11,7 @@ const props = withDefaults(defineProps<{ mode?: DeviceConnectionMode }>(), { mod
 const emit = defineEmits<{ connected: []; error: [message: string] }>()
 const devices = ref<SensorDevice[]>([])
 const selectedDeviceId = ref('')
-const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '' })
+const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '', battery: createEmptyBatteryState() })
 const scanning = ref(false)
 const busy = ref(false)
 const errorMessage = ref('')

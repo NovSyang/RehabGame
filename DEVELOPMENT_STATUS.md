@@ -121,6 +121,16 @@
 - [x] 更换设备弹窗与首次设置复用受控设备扫描面板
 - [x] Settings 移除训练设备区域，仅保留 ROM 与开发者诊断
 
+### Battery Status Enhancement
+
+- [x] Battery Register 读取命令 `FF AA 27 64 00` 与通用 `0x71` Register Parser
+- [x] SensorBatteryState、连接后立即读取、30 秒低频刷新与断线清理
+- [x] 0x71 与 0x61 分流，Battery 不影响 MotionProcessor、Rate、训练记录或 Replay
+- [x] DeveloperDebug 手动读取、Battery Raw、时间戳与完整 Register Hex
+- [x] 顶部设备状态的 CSS 电池图标与实时百分比显示
+- [x] 使用真实 BS-BT91 与厂家软件确认 Raw `391 → 75%`、`389 → 70%`
+- [x] 根据厂家电压表实现 Battery Percent Decoder（边界值归入较高电压档）
+
 ## V0.6 待实机验收
 
 - [x] 已绑定设备启动首次成功、Retry 1 成功、Retry 3 成功及四次均失败

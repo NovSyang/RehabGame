@@ -2,12 +2,17 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { connectionManager, sensorService } from '../../app/AppServices'
 import DeviceSwitchDialog from '../device/DeviceSwitchDialog.vue'
+import { createEmptyBatteryState, getBatteryFillPercent, isLowBatteryPercent } from '../../core/sensor/bsbt91/BsBt91Battery'
 import type { SensorConnectionSnapshot } from '../../core/sensor/SensorConnectionManager'
 import type { SensorRuntimeSnapshot } from '../../core/sensor/SensorService'
 
-const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '' })
+const snapshot = ref<SensorRuntimeSnapshot>({ state: 'idle', frame: null, gameInput: { x: 0, y: 0, connected: false, calibrated: false, timestamp: 0 }, rateHz: 0, rawHex: '', battery: createEmptyBatteryState() })
 const connection = ref<SensorConnectionSnapshot>(connectionManager.getSnapshot())
 const connected = computed(() => snapshot.value.state === 'connected')
+const batteryText = computed(() => snapshot.value.battery.percent === null ? '--%' : `${snapshot.value.battery.percent}%`)
+const batteryFillPercent = computed(() => getBatteryFillPercent(snapshot.value.battery.percent))
+const batteryLow = computed(() => isLowBatteryPercent(snapshot.value.battery.percent))
+const batteryAriaLabel = computed(() => snapshot.value.battery.percent === null ? '设备电量读取中' : `设备电量 ${snapshot.value.battery.percent}%`)
 const open = ref(false)
 const showSwitchDialog = ref(false)
 const root = ref<HTMLElement | null>(null)
@@ -36,4 +41,4 @@ async function forget(): Promise<void> {
 }
 </script>
 
-<template><div ref="root" class="device-status-menu"><button class="device-status" :data-connected="connected" @click="open = !open"><span class="status-dot"></span><span>{{ connected ? '设备已连接' : '设备未连接' }}</span><span aria-hidden="true">▾</span></button><div v-if="open" class="device-status-dropdown"><button class="dropdown-item" :disabled="!connection.binding" @click="reconnect">重新连接</button><button class="dropdown-item" @click="switchDevice">更换设备</button><button class="dropdown-item danger-text" :disabled="!connection.binding" @click="forget">忘记设备</button></div><p v-if="errorMessage" class="device-status-error">{{ errorMessage }}</p><DeviceSwitchDialog v-if="showSwitchDialog" @close="showSwitchDialog = false" @connected="showSwitchDialog = false" /></div></template>
+<template><div ref="root" class="device-status-menu"><button class="device-status" :data-connected="connected" @click="open = !open"><span class="status-dot"></span><span>{{ connected ? '设备已连接' : '设备未连接' }}</span><span v-if="connected" class="battery-status" :data-low="batteryLow" :aria-label="batteryAriaLabel"><span class="battery-icon" :style="{ '--battery-fill-width': `${batteryFillPercent}%` }" aria-hidden="true"><span class="battery-icon-level"><i></i></span></span><span aria-hidden="true">{{ batteryText }}</span></span><span aria-hidden="true">▾</span></button><div v-if="open" class="device-status-dropdown"><button class="dropdown-item" :disabled="!connection.binding" @click="reconnect">重新连接</button><button class="dropdown-item" @click="switchDevice">更换设备</button><button class="dropdown-item danger-text" :disabled="!connection.binding" @click="forget">忘记设备</button></div><p v-if="errorMessage" class="device-status-error">{{ errorMessage }}</p><DeviceSwitchDialog v-if="showSwitchDialog" @close="showSwitchDialog = false" @connected="showSwitchDialog = false" /></div></template>
