@@ -138,7 +138,7 @@ export class SensorService {
     this.handleBatteryRegister(frame, bytes)
   }
 
-  /** 当前阶段保存 Raw 供实机协议比对，未验证时百分比始终保持未知。 */
+  /** 处理已验证的 Battery Register，保存 Raw、百分比、更新时间和原始寄存器帧。 */
   private handleBatteryRegister(frame: BsBt91RegisterFrame, bytes: Uint8Array): void {
     const rawValue = frame.values[0] ?? null
     this.battery = {

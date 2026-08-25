@@ -133,6 +133,13 @@
 
 ## V0.6 待实机验收
 
+### Closing Batch 代码与自动验证
+
+- [x] TrainingView 统一引导用户通过右上角设备状态菜单管理设备
+- [x] Battery 已验证实现的代码注释与实际 Percent Decoder 对齐
+- [x] 执行完整 BS-BT91 启动、重试、训练、电量刷新、断线恢复与 Replay 组合回归
+- [x] 完成至少 30 分钟连续运行的 BLE、Battery Timer、Pixi Ticker 与内存稳定性检查
+
 - [x] 已绑定设备启动首次成功、Retry 1 成功、Retry 3 成功及四次均失败
 - [x] 右上角手动重连、更换设备取消/失败回滚和忘记设备流程
 - [x] 训练中异常断线自动恢复、重新中心校准与 Replay 有效时长回归
