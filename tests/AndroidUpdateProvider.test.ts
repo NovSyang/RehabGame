@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginListenerHandle } from '@capacitor/core'
-import { AndroidUpdateProvider, validateAndroidUpdateManifest } from '../src/platform/capacitor/AndroidUpdateProvider'
+import { AndroidUpdateProvider, defaultAndroidUpdateFetcher, validateAndroidUpdateManifest } from '../src/platform/capacitor/AndroidUpdateProvider'
 import type { AndroidDownloadProgress, AndroidUpdaterBridge } from '../src/platform/capacitor/AndroidApkUpdaterPlugin'
 
 const manifest = {
@@ -31,7 +31,22 @@ function response(value: unknown, ok = true): Promise<Response> {
   return Promise.resolve({ ok, status: ok ? 200 : 500, json: async () => value } as Response)
 }
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('AndroidUpdateProvider', () => {
+  it('默认 Fetch 适配器通过 globalThis 保留原生调用上下文', async () => {
+    const fetcher = vi.fn(function (this: typeof globalThis) {
+      expect(this).toBe(globalThis)
+      return response(manifest)
+    })
+    vi.stubGlobal('fetch', fetcher)
+
+    await expect(defaultAndroidUpdateFetcher('https://example.com/update.json')).resolves.toMatchObject({ ok: true })
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
+
   it('仅当远端 versionCode 更大时返回更新', async () => {
     const fake = bridge()
     const provider = new AndroidUpdateProvider(fake.value, () => response(manifest))
@@ -79,5 +94,14 @@ describe('AndroidUpdateProvider', () => {
     const info = await provider.checkForUpdate()
     fake.spies.downloadApk.mockRejectedValue(new Error('APK 签名证书与当前应用不一致。'))
     await expect(provider.download(info!)).rejects.toThrow('签名证书')
+  })
+
+  it('网络 Fetch 失败时返回可读中文提示', async () => {
+    const fake = bridge()
+    const provider = new AndroidUpdateProvider(fake.value, async () => {
+      throw new TypeError('Failed to fetch')
+    })
+    await provider.getCurrentVersion()
+    await expect(provider.checkForUpdate()).rejects.toThrow('无法连接更新服务器，请检查网络后重试。')
   })
 })

@@ -278,12 +278,20 @@
 
 ### 自动验证
 
-- [x] 39 个测试文件、153 项单元测试通过
+- [x] 39 个测试文件、155 项单元测试通过
 - [x] `npm run build` 通过
 - [x] `cargo check` 通过，Release 主程序按产品身份输出为 `RehabGame.exe`
 - [x] Android Debug APK 构建通过，Capacitor 本地更新插件可由 Java 编译器正常编译
 - [ ] 使用外部 Tauri 私钥执行签名 `npm run tauri:build`（当前机器下载 NSIS 工具包时发生 `unexpected end of file`，尚未进入签名阶段）
 - [ ] 使用外部 Android JKS 环境变量生成 Signed Release APK 与 AAB
+
+### Android 检查更新 Fetch Context Fix
+
+- [x] Android 默认 Fetch 改为通过 `globalThis.fetch()` 调用，避免 WebView `illegal invocation`
+- [x] 保留 Fetch 依赖注入，并增加原生调用上下文回归测试
+- [x] 网络不可达的 `TypeError` 转换为可读中文提示
+- [x] `npm run test`、`npm run build` 与 Android Debug APK 构建通过
+- [ ] Android 真机确认检查更新可以实际请求 GitHub Manifest
 
 ### V0.8 待发布与实机验收
 

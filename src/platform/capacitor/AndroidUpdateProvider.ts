@@ -19,6 +19,12 @@ export interface AndroidUpdateManifest {
 
 type FetchFunction = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
+/**
+ * 通过 globalThis 调用原生 Fetch，保留 Android WebView 要求的 Window 上下文。
+ * 测试仍可向 Provider 注入普通 FetchFunction，不影响现有业务测试。
+ */
+export const defaultAndroidUpdateFetcher: FetchFunction = (input, init) => globalThis.fetch(input, init)
+
 /** Android 使用 versionCode 比较，避免把版本字符串按浮点数处理。 */
 export class AndroidUpdateProvider implements IUpdateProvider {
   readonly platform = 'android' as const
@@ -30,7 +36,7 @@ export class AndroidUpdateProvider implements IUpdateProvider {
 
   constructor(
     private readonly bridge: AndroidUpdaterBridge = AndroidApkUpdater,
-    private readonly fetcher: FetchFunction = fetch,
+    private readonly fetcher: FetchFunction = defaultAndroidUpdateFetcher,
     private readonly endpoint = UPDATE_ENDPOINTS.android,
   ) {}
 
@@ -68,6 +74,8 @@ export class AndroidUpdateProvider implements IUpdateProvider {
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw new Error('检查更新超时，请稍后重试。')
+      // Fetch 在离线、DNS 或服务器不可达时通常抛出 TypeError，转换为用户可理解的提示。
+      if (error instanceof TypeError) throw new Error('无法连接更新服务器，请检查网络后重试。')
       throw error
     } finally {
       clearTimeout(timer)
