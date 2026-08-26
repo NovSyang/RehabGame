@@ -5,13 +5,14 @@ import releaseVersion from '../release-version.json'
 import tauriConfig from '../src-tauri/tauri.conf.json'
 
 describe('release version', () => {
-  it('0.8.0 产品版本和 Android code 使用固定发布基线', () => {
+  it('产品、桌面与 Android 始终使用同一份有效发布版本', () => {
+    // 验证版本契约而不是写死 0.8.0，确保发布工具可以安全递增版本。
+    expect(releaseVersion.productVersion).toMatch(/^\d+\.\d+\.\d+$/)
+    expect(releaseVersion.android.versionCode).toBeGreaterThan(0)
     expect(releaseVersion).toMatchObject({
       schemaVersion: 1,
-      productVersion: '0.8.0',
-      displayVersion: '0.8',
-      desktop: { version: '0.8.0' },
-      android: { versionName: '0.8.0', versionCode: 8 },
+      desktop: { version: releaseVersion.productVersion },
+      android: { versionName: releaseVersion.productVersion },
     })
   })
 
