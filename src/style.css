@@ -143,6 +143,21 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .status[data-state="error"] { color: #fc8181; }
 .error { color: #fc8181; font-size: 12px; }
 
+/* 更新界面沿用现有深蓝卡片与薄荷色进度，避免原生能力显得突兀。 */
+.update-settings-card { display: grid; gap: 16px; }
+.update-settings-card h2 { margin: 0; }
+.update-version-row, .update-policy-field { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.update-version-row strong { color: #8fd8ff; font-size: 22px; }
+.update-dialog-backdrop { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(1, 7, 15, .78); }
+.update-dialog { width: min(620px, 100%); max-height: calc(100dvh - 48px); overflow: auto; border: 1px solid #34506f; border-radius: 20px; background: #0f1b2c; box-shadow: 0 24px 70px rgba(0,0,0,.5); }
+.update-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 24px; border-bottom: 1px solid #263952; }
+.update-dialog h2 { margin: 4px 0 0; }
+.update-dialog-body { padding: 22px 24px; }
+.update-dialog > footer { justify-content: flex-end; padding: 0 24px 22px; }
+.update-notes { padding-left: 22px; color: #dcecff; line-height: 1.7; }
+.update-progress { height: 10px; overflow: hidden; margin-top: 18px; border-radius: 99px; background: #0a1727; }
+.update-progress span { display: block; height: 100%; border-radius: inherit; background: #68d391; transition: width .18s ease; }
+
 .metric-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -311,6 +326,11 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
   .replay-controls input[type="range"] { flex-basis: 100%; order: 3; }
   .device-dialog-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
   .device-dialog { max-height: calc(100dvh - 24px); }
+  .update-dialog-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .update-dialog { max-height: calc(100dvh - 24px); border-radius: 16px; }
+  .update-dialog > header, .update-dialog-body { padding: 18px; }
+  .update-dialog > footer { padding: 0 18px 18px; }
+  .update-version-row, .update-policy-field { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
 
 /* Android Training：占满动态视口，Toolbar 紧凑，Canvas 使用剩余空间。 */

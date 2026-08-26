@@ -4,17 +4,21 @@ import { useRouter } from 'vue-router'
 import CenterCalibrationGuide from '../components/calibration/CenterCalibrationGuide.vue'
 import DeviceConnectionPanel from '../components/device/DeviceConnectionPanel.vue'
 import RomCalibrationPanel from '../components/rom/RomCalibrationPanel.vue'
-import { motionProfileService, sensorService } from '../app/AppServices'
+import { motionProfileService, sensorService, updateInstallGuard } from '../app/AppServices'
 import { profileFromMeasuredRange } from '../core/motion/MotionProfile'
 
 const router = useRouter()
 const step = ref<'device' | 'center' | 'rom'>('device')
 const errorMessage = ref('')
 let unsubscribe: (() => void) | null = null
+let releaseUpdateLock: (() => void) | null = null
 
 // 已绑定设备在后台恢复连接后可自动进入中心准备，不要求再次手动选择。
-onMounted(() => { unsubscribe = sensorService.onSnapshot((snapshot) => { if (step.value === 'device' && snapshot.state === 'connected') step.value = 'center' }) })
-onBeforeUnmount(() => unsubscribe?.())
+onMounted(() => {
+  releaseUpdateLock = updateInstallGuard.acquire('first-run-setup')
+  unsubscribe = sensorService.onSnapshot((snapshot) => { if (step.value === 'device' && snapshot.state === 'connected') step.value = 'center' })
+})
+onBeforeUnmount(() => { unsubscribe?.(); releaseUpdateLock?.() })
 function deviceConnected(): void { step.value = 'center' }
 function centerCompleted(): void { step.value = 'rom' }
 async function romCompleted(range: Parameters<typeof profileFromMeasuredRange>[0]): Promise<void> {

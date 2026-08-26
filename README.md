@@ -1,73 +1,95 @@
-# BS-BT91 康复交互游戏 V0.7 / Android Adaptation
+# RehabGame 0.8.0
 
-V0.7 在已完成实机验证的设备、ROM 和训练闭环上，加入通用多游戏框架与第二款正式训练游戏：
+RehabGame 是面向 BS-BT91 传感器的跨平台康复训练应用。Windows 使用 Tauri，Android 使用 Capacitor，两端共享 BLE 数据解析、运动处理、训练、历史与轨迹回放代码。0.8.0 在 V0.7 多游戏能力之上增加 Windows / Android 在线更新系统。
 
 ```text
 BS-BT91 → BLE 自动恢复 → 每局中心 Zero → MotionProfile
-→ MotionProcessor → GameInput → GameRegistry / GameModule
-→ TargetReach 或 TrajectoryFollow → TrainingRecord → History / Replay
+→ MotionProcessor → GameInput → TargetReach / TrajectoryFollow
+→ TrainingRecord → History / Replay
 ```
 
 ## 当前能力
 
-- Windows Tauri BLE：扫描、连接、FFE4 Notify、FFE9 Write 与异常断线检测。
-- 中心校准与四方向个体 ROM 标定：3 秒采样、前 500ms 忽略、P95 结果。
-- MotionProfile 持久化：保存死区、实测 ROM、训练比例与实际活动范围。
-- 最近设备绑定：按 ID、地址、唯一名称匹配，异常断线按 1/2/5 秒自动重连。
-- 多游戏训练宿主：动态 HUD、统一中心校准、手动暂停和断线恢复。
-- 四方向目标触达训练：倒计时、Hold、Timeout、方向统计和历史目标回放。
-- 8 字轨迹跟随训练：60 秒连续二维控制、误差与容差范围统计。
-- IndexedDB 混合训练历史：结果、Profile、配置与 25Hz 轨迹事实快照。
-- 双模式历史回放：动态播放、Seek、倍速和完整二维轨迹。
-- 实时电量状态：连接后读取并每 30 秒更新，经厂家分段表解码百分比。
+- Windows Tauri 与 Android Capacitor BLE：扫描、连接、Notify、Write、断线恢复及电量状态。
+- 中心校准、四方向个人 ROM、MotionProfile 持久化与每局训练前置。
+- 四方向目标触达和 8 字轨迹跟随两款正式训练游戏。
+- IndexedDB 混合训练历史，以及动态、Seek、倍速和完整二维轨迹回放。
+- Windows Tauri Updater：签名更新包检查、下载和安装。
+- Android 本地更新插件：APK 下载、SHA-256、包名、版本号和签名证书校验，以及 PackageInstaller 安装。
+- 更新策略支持“静默、提示、手动”；训练、首次设置和 ROM 标定期间由安全锁延迟安装。
 
-## 开发环境
+## 开发与验证
 
-Windows 10/11、Node.js 22+、Rust stable、Visual Studio C++ Desktop workload、WebView2 Runtime；Android 构建另外需要 JDK 21、Android SDK 36、Build Tools 36 和 adb。
+Windows 10/11 开发需要 Node.js 22+、Rust stable、Visual Studio C++ Desktop workload 和 WebView2 Runtime。Android 构建还需要 JDK 21、Android SDK 36、Build Tools 36 和 adb。
 
 ```powershell
 npm install
 npm run test
 npm run build
 npm run tauri:dev
-```
-
-Android 使用 Capacitor 8，共享同一份 Vue、Pixi、训练和历史代码：
-
-```powershell
-npm run android:sync
 npm run android:build:debug
 ```
 
-Debug APK 输出在 `android/app/build/outputs/apk/debug/app-debug.apk`。连接已开启 USB 调试的真机后，可使用 `adb install -r` 安装。
+Debug APK 位于 `android/app/build/outputs/apk/debug/app-debug.apk`。浏览器仅用于界面预览，不支持 BLE 和在线更新。
 
-## 使用流程
+## 版本基线
 
-首次使用：
+`release-version.json` 是跨平台版本的唯一来源。修改版本后先同步，再检查是否存在漂移：
 
-```text
-首次设置连接设备 → 中心确认 → 四方向 ROM 标定 → 选择游戏 → 每局中心校准 → 训练 → 结果与历史
+```powershell
+npm run version:sync
+npm run version:check
 ```
 
-后续使用：
+0.8.0 固定使用：
 
-```text
-后台恢复上次设备 → 选择游戏 → 每局中心校准 → 训练
+- Windows：`RehabGame / com.rehabgame.app / 0.8.0`
+- Android：`versionName 0.8.0 / versionCode 8`
+- GitHub Releases：`NovSyang/RehabGame`
+
+## 签名构建
+
+私钥、JKS 和密码必须保留在仓库外，只通过当前构建终端的环境变量注入。可复制 `.env.example` 中的变量名作为参考，但不要把真实值写入项目文件。
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = 'D:\path\to\rehabgame-updater.key'
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = '***'
+npm run tauri:build
+
+$env:REHAB_ANDROID_KEYSTORE_PATH = 'D:\path\to\rehabgame-release.jks'
+$env:REHAB_ANDROID_STORE_PASSWORD = '***'
+$env:REHAB_ANDROID_KEY_PASSWORD = '***'
+$env:REHAB_ANDROID_KEY_ALIAS = 'rehabgame'
+npm run android:build:release
+npm run android:bundle
 ```
 
-浏览器仅用于界面预览；真实 BS-BT91 扫描、自动重连和实机训练必须在 `npm run tauri:dev` 打开的 Tauri 桌面窗口或 Android Native 应用中进行。
+Android Release 任务缺少签名变量时会主动失败，Debug 构建不受影响。旧 Debug APK 与正式 Release APK 的签名不同，首次切换到 Release 0.8.0 时需要卸载 Debug APK；卸载会同时清除应用的 localStorage、IndexedDB、个人 ROM、绑定和训练历史。
 
-## Android 移动端说明
+## 发布清单
 
-- Android 包名为 `com.rehabgame.app`，应用名为 `RehabGame`。
-- 训练页会尝试锁定横屏并保持屏幕常亮；系统拒绝方向锁定时仍可继续操作。
-- 训练进入后台会自动暂停，回到前台后必须重新确认自然中心。
-- 本阶段不提交 keystore 或签名密码，正式签名包在真机验收后单独冻结。
+签名构建完成后，在仓库根目录生成 GitHub Release 所需清单。输出目录 `release-output/` 已被 Git 忽略。
 
-## V0.7 实机验收重点
+```powershell
+npm run release:manifest:windows
+npm run release:manifest:android
+```
 
-1. 分别完成 TargetReach 和 TrajectoryFollow，确认两款游戏方向与个人 ROM 一致。
-2. TrajectoryFollow 暂停或断线后，引导点时间轴不跳跃，重新中心校准后继续原会话。
-3. 历史同时查看旧 TargetReach、新 TargetReach 和 TrajectoryFollow 记录。
-4. 验证两款游戏的动态回放、Seek、倍速、完整轨迹及弹窗反复开关资源释放。
-5. 连续运行至少 30 分钟，观察 BLE、电量轮询、Pixi Ticker 和内存稳定性。
+脚本默认读取标准 Release 输出路径。需要自定义路径或发布说明时，可直接执行 `node scripts/generate-tauri-update-manifest.mjs --artifact <path> --notes <path>` 或 Android 对应脚本，避免不同 npm 版本对附加参数的处理差异。
+
+人工创建 `v0.8.0` GitHub Release，并上传 Windows 更新包、对应 `.sig`、Android Release APK、`latest.json`、`android-latest.json` 和 `SHA256SUMS.txt`。不要上传私钥、JKS、密码或 `.env`。
+
+## 0.8.1 升级验收
+
+1. 将 `release-version.json` 提升到 0.8.1，并递增 Android `versionCode`，然后执行版本同步。
+2. 使用与 0.8.0 相同的 Tauri 私钥和 Android JKS 构建两端 Release。
+3. 生成清单并发布 `v0.8.1` 资产。
+4. 从已安装的 0.8.0 验证检查、下载、训练安全锁、Android 未知来源授权和覆盖安装。
+5. 验证升级后 Profile、Binding、训练历史和 Replay 均保留。
+
+## 安全边界
+
+- 更新端点不内置 GitHub PAT，发布资产必须可公开读取。
+- Android APK 必须同时通过 SHA-256、包名、递增版本号和同签名证书校验。
+- Windows 更新包由 Tauri Updater 使用配置中的公开密钥验证。
+- 在线更新失败只影响更新状态，不得中断 BLE、训练、历史或回放。

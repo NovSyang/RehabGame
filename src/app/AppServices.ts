@@ -15,6 +15,10 @@ import { createSensorTransport } from '../platform/PlatformSensorTransport'
 import { createDisplayService } from '../platform/PlatformDisplayService'
 import { createAppLifecycleService } from '../platform/PlatformAppLifecycleService'
 import { createBackButtonService } from '../platform/PlatformBackButtonService'
+import { AppUpdateService } from '../core/update/AppUpdateService'
+import { UpdateInstallGuard } from '../core/update/UpdateInstallGuard'
+import { UpdatePolicyRepository } from '../core/update/UpdatePolicyRepository'
+import { createUpdateProvider } from '../platform/update/createUpdateProvider'
 
 /** 应用级单例服务，确保切换页面时不会重复创建 BLE 监听与传感器处理链路。 */
 export const transport = createSensorTransport()
@@ -26,6 +30,12 @@ const localStore = new LocalStorageStore()
 export const connectionManager = new SensorConnectionManager(sensorService, new LocalStorageDeviceBindingRepository(localStore))
 export const motionProfileService = new MotionProfileService(new LocalStorageMotionProfileRepository(localStore), sensorService)
 export const trainingRepository = new IndexedDbTrainingRepository()
+export const updateInstallGuard = new UpdateInstallGuard()
+export const updateService = new AppUpdateService(
+  createUpdateProvider(),
+  new UpdatePolicyRepository(localStore),
+  updateInstallGuard,
+)
 
 /** 结果页使用的短期内存状态；历史记录才是可跨重启的数据来源。 */
 export const latestTrainingRecord = ref<TrainingRecord | null>(null)

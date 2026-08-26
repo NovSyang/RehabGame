@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import CenterCalibrationGuide from '../components/calibration/CenterCalibrationGuide.vue'
 import DeviceConnectionStatus from '../components/app/DeviceConnectionStatus.vue'
-import { appLifecycleService, connectionManager, displayService, persistTrainingResult, sensorService } from '../app/AppServices'
+import { appLifecycleService, connectionManager, displayService, persistTrainingResult, sensorService, updateInstallGuard } from '../app/AppServices'
 import type { GameHudSnapshot } from '../core/game/TrainingGameEvents'
 import type { ITrainingGame } from '../core/game/ITrainingGame'
 import { pauseReasonAfterBackground, pauseReasonAfterDisconnect, shouldAutoResume, type PauseReason } from '../core/game/TrainingPausePolicy'
@@ -35,6 +35,7 @@ let game: ITrainingGame<BaseTrainingResult> | null = null
 let displayModeEntered = false
 let appActive = true
 let backgroundedDuringSession = false
+let releaseUpdateLock: (() => void) | null = null
 
 if (module?.definition.enabled) {
   game = module.createGame({
@@ -47,6 +48,7 @@ if (module?.definition.enabled) {
 
 // 通用宿主只分发标准化输入；具体游戏无法访问 BLE、角度或 ROM 算法。
 onMounted(async () => {
+  releaseUpdateLock = updateInstallGuard.acquire('training')
   if (!module || !module.definition.enabled || !game) {
     await router.replace({ path: '/games', query: { error: 'game-unavailable' } })
     return
@@ -91,6 +93,7 @@ onBeforeUnmount(() => {
   unsubscribe?.()
   unsubscribeLifecycle?.()
   game?.destroy()
+  releaseUpdateLock?.()
   if (displayModeEntered) void displayService.leaveTrainingMode()
 })
 

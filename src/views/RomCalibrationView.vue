@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CenterCalibrationGuide from '../components/calibration/CenterCalibrationGuide.vue'
 import RomCalibrationPanel from '../components/rom/RomCalibrationPanel.vue'
-import { motionProfileService } from '../app/AppServices'
+import { motionProfileService, updateInstallGuard } from '../app/AppServices'
 import { profileFromMeasuredRange } from '../core/motion/MotionProfile'
 import type { MotionRange } from '../core/motion/MotionConfig'
 
@@ -12,6 +12,11 @@ const route = useRoute()
 const phase = ref<'center' | 'rom'>('center')
 const errorMessage = ref('')
 const source = computed(() => route.query.source === 'settings' ? 'settings' : 'setup')
+let releaseUpdateLock: (() => void) | null = null
+
+// 整个 ROM 流程禁止启动安装器，避免中心或样本采集被系统页面中断。
+onMounted(() => { releaseUpdateLock = updateInstallGuard.acquire('rom-calibration') })
+onBeforeUnmount(() => releaseUpdateLock?.())
 
 // 从设置重新测量时，旧 Profile 一直保留到四方向全部完成并保存。
 function centerCompleted(): void { phase.value = 'rom' }

@@ -1,4 +1,4 @@
-# 开发状态 V0.7
+# 开发状态 V0.8
 
 ## V0.1 已完成
 
@@ -239,3 +239,57 @@
 - [ ] Android localStorage、IndexedDB、History 与 Replay 跨 Force Stop 验证
 - [ ] Android 30 分钟 BLE、Battery Timer、Pixi、Observer 与内存稳定性
 - [ ] 正式 keystore、Signed Release APK 与签名包实机验收（本轮明确延期）
+
+## V0.8 Windows / Android 在线更新系统
+
+### 版本与签名配置
+
+- [x] 新增 `release-version.json`，统一 Product、Desktop 与 Android 版本来源
+- [x] 版本同步与漂移检查覆盖 package、Tauri 和 Android Gradle
+- [x] Windows 产品身份统一为 `RehabGame / com.rehabgame.app`
+- [x] Tauri 启用 NSIS、Updater Artifact、公开验证密钥与主窗口 Updater Capability
+- [x] Android Release 签名仅从环境变量读取，缺少签名变量时明确终止 Release 任务
+- [x] `.gitignore` 忽略私钥、JKS、环境变量、签名属性和发布输出，继续允许提交公开 `.key.pub`
+
+### 通用更新服务与 Provider
+
+- [x] UpdatePolicy、UpdateState、UpdateInfo、进度、Provider 与策略持久化
+- [x] Tauri、Android Native、Browser 三平台 Provider Factory
+- [x] silent、prompt、manual 三种策略和启动后 3 秒非阻塞检查
+- [x] 引用计数式安装安全锁，训练、首次设置和 ROM 标定期间延迟安装
+- [x] Windows Updater 分离检查、下载与安装，并正确释放旧 Update 资源
+- [x] Android Manifest 的 HTTPS、SHA-256、大小与递增 versionCode 校验
+
+### Android 原生 APK 更新
+
+- [x] Capacitor 本地 AndroidApkUpdaterPlugin 注册及 TypeScript Bridge
+- [x] APK 下载到应用缓存目录，并持续发布下载进度
+- [x] 下载完成后校验 SHA-256、包名、versionCode 与当前应用签名证书
+- [x] Android 26+ 未知来源权限查询和应用专属设置页引导
+- [x] PackageInstaller Session、系统确认、成功与失败状态处理
+- [x] 切换页面或销毁服务时清理监听与临时更新文件
+
+### 页面与发布工具
+
+- [x] Settings “关于与更新”卡片、版本、策略、状态及手动检查入口
+- [x] 全局响应式 UpdateDialog、下载进度、稍后、重试、安装与权限操作
+- [x] Windows `latest.json` 与 Android `android-latest.json` / `SHA256SUMS.txt` 生成脚本
+- [x] README 记录环境变量、签名构建、首装数据影响和 0.8.1 升级流程
+
+### 自动验证
+
+- [x] 39 个测试文件、153 项单元测试通过
+- [x] `npm run build` 通过
+- [x] `cargo check` 通过，Release 主程序按产品身份输出为 `RehabGame.exe`
+- [x] Android Debug APK 构建通过，Capacitor 本地更新插件可由 Java 编译器正常编译
+- [ ] 使用外部 Tauri 私钥执行签名 `npm run tauri:build`（当前机器下载 NSIS 工具包时发生 `unexpected end of file`，尚未进入签名阶段）
+- [ ] 使用外部 Android JKS 环境变量生成 Signed Release APK 与 AAB
+
+### V0.8 待发布与实机验收
+
+- [ ] 人工创建公开 GitHub Release 并上传两平台更新资产与清单
+- [ ] Windows Release 0.8.0 → 0.8.1 的签名下载和安装回归
+- [ ] Android 同一 JKS 的 0.8.0 → 0.8.1 下载、校验、授权和覆盖安装回归
+- [ ] 校验 SHA-256、包名、versionCode 或签名证书不匹配时均拒绝 Android 安装
+- [ ] 验证三种更新策略、训练/ROM 安全锁、网络失败与“稍后更新”
+- [ ] 验证升级后 Profile、Binding、训练历史和 Replay 保持不变

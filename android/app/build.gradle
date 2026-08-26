@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Release 密钥只从进程环境读取，避免密码进入源码或 Gradle 配置文件。
+def releaseKeystorePath = System.getenv('REHAB_ANDROID_KEYSTORE_PATH')
+def releaseStorePassword = System.getenv('REHAB_ANDROID_STORE_PASSWORD')
+def releaseKeyPassword = System.getenv('REHAB_ANDROID_KEY_PASSWORD')
+def releaseKeyAlias = System.getenv('REHAB_ANDROID_KEY_ALIAS') ?: 'rehabgame'
+def releaseSigningConfigured = releaseKeystorePath && releaseStorePassword && releaseKeyPassword
+
 android {
     namespace = "com.rehabgame.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +14,8 @@ android {
         applicationId "com.rehabgame.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 8
+        versionName "0.8.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +23,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseSigningConfigured) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            if (releaseSigningConfigured) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// 禁止误生成无法覆盖安装的 unsigned Release 包，Debug 任务不受影响。
+gradle.taskGraph.whenReady { graph ->
+    def releaseRequested = graph.allTasks.any { task ->
+        task.project == project && task.name.toLowerCase().contains('release')
+    }
+    if (releaseRequested && !releaseSigningConfigured) {
+        throw new GradleException('Release 签名环境变量未配置，请设置 REHAB_ANDROID_KEYSTORE_PATH、REHAB_ANDROID_STORE_PASSWORD 和 REHAB_ANDROID_KEY_PASSWORD。')
     }
 }
 

@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BS-BT91 Rehab Demo",
-  "version": "0.1.0",
-  "identifier": "com.rehab.bsbt91.demo",
+  "productName": "RehabGame",
+  "mainBinaryName": "RehabGame",
+  "version": "0.8.0",
+  "identifier": "com.rehabgame.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "BS-BT91 康复交互 Demo",
+        "title": "RehabGame",
         "width": 1440,
         "height": 900,
         "minWidth": 1100,
@@ -24,7 +25,11 @@
     }
   },
   "bundle": {
-    "active": false,
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -32,5 +37,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFDNEMwQzkwQzUzQkQzMDgKUldRSTB6dkZrQXhNckJ1bEZvRWlMRlF0K0hrZDl6V3BPdkNadWpOZ2tlYmZKNkdEQjk0cXFsd3MK",
+      "endpoints": [
+        "https://github.com/NovSyang/RehabGame/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

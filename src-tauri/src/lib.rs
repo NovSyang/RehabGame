@@ -266,6 +266,8 @@ fn now_ms() -> u64 {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Updater 只负责桌面更新，安装时由官方插件校验 Tauri 签名。
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(BleState(Mutex::new(BleRuntime::default())))
         .invoke_handler(tauri::generate_handler![
             ble_scan,

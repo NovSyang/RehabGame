@@ -39,6 +39,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 内部 Release APK 通过系统 PackageInstaller 覆盖安装，仍由用户控制来源授权。 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Android 11 及以下扫描 BLE 仍需要旧定位权限，较新系统不会请求它们。 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />

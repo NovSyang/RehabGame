@@ -22,3 +22,14 @@ android/local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# 在线更新签名私钥和本机环境变量绝不能提交；公钥 .key.pub 可以公开。
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+android/signing.properties
+release-output/

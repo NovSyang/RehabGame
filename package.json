@@ -1,11 +1,13 @@
 {
   "name": "rehab-bsbt91-game",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "version:sync": "node scripts/sync-version.mjs --write",
+    "version:check": "node scripts/sync-version.mjs --check",
+    "build": "npm run version:check && vue-tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "tauri": "tauri",
@@ -15,7 +17,9 @@
     "android:sync": "npm run build && cap sync android",
     "android:build:debug": "npm run android:sync && cd android && gradlew.bat assembleDebug",
     "android:build:release": "npm run android:sync && cd android && gradlew.bat assembleRelease",
-    "android:bundle": "npm run android:sync && cd android && gradlew.bat bundleRelease"
+    "android:bundle": "npm run android:sync && cd android && gradlew.bat bundleRelease",
+    "release:manifest:windows": "node scripts/generate-tauri-update-manifest.mjs",
+    "release:manifest:android": "node scripts/generate-android-update-manifest.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",
@@ -25,6 +29,7 @@
     "@capacitor/core": "^8.5.0",
     "@capacitor/screen-orientation": "^8.0.1",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "pinia": "^3.0.0",
     "pixi.js": "^8.0.0",
     "vue": "^3.5.0",
