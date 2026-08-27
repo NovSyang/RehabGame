@@ -1,0 +1,5 @@
+$env:TAURI_SIGNING_PRIVATE_KEY = 'D:\apps\dev\work\HandDevice\Keys\Tauri\rehabgame-updater.key'
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = Read-Host '请输入 Tauri 私钥密码' -MaskInput
+
+
+npm run tauri:build

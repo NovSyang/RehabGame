@@ -1,0 +1,6 @@
+$env:REHAB_ANDROID_KEYSTORE_PATH = 'D:\apps\dev\work\HandDevice\Keys\Android\rehabgame-release.jks'
+$env:REHAB_ANDROID_STORE_PASSWORD = Read-Host '请输入 Android Keystore 密码' -MaskInput
+$env:REHAB_ANDROID_KEY_PASSWORD = Read-Host '请输入 rehabgame Alias 密码' -MaskInput
+$env:REHAB_ANDROID_KEY_ALIAS = 'rehabgame'
+
+npm run android:build:release

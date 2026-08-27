@@ -11,6 +11,10 @@ src-tauri/gen/
 rustup-init.exe
 *.log
 
+# 品牌资产脚本的 Python 编译缓存不提交到仓库。
+__pycache__/
+*.py[cod]
+
 # Android 工程只提交源码，构建缓存、本机 SDK 路径和签名材料不得进入仓库。
 android/.gradle/
 android/.idea/
