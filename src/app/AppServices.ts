@@ -19,6 +19,7 @@ import { AppUpdateService } from '../core/update/AppUpdateService'
 import { UpdateInstallGuard } from '../core/update/UpdateInstallGuard'
 import { UpdatePolicyRepository } from '../core/update/UpdatePolicyRepository'
 import { createUpdateProvider } from '../platform/update/createUpdateProvider'
+import { GameTutorialRepository } from '../core/game/GameTutorialRepository'
 
 /** 应用级单例服务，确保切换页面时不会重复创建 BLE 监听与传感器处理链路。 */
 export const transport = createSensorTransport()
@@ -27,6 +28,7 @@ export const appLifecycleService = createAppLifecycleService()
 export const backButtonService = createBackButtonService()
 export const sensorService = new SensorService(transport)
 const localStore = new LocalStorageStore()
+export const gameTutorialRepository = new GameTutorialRepository(localStore)
 export const connectionManager = new SensorConnectionManager(sensorService, new LocalStorageDeviceBindingRepository(localStore))
 export const motionProfileService = new MotionProfileService(new LocalStorageMotionProfileRepository(localStore), sensorService)
 export const trainingRepository = new IndexedDbTrainingRepository()

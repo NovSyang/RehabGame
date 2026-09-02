@@ -52,6 +52,12 @@ button, select { font: inherit; }
 .content-page { min-height: calc(100vh - 52px); min-height: calc(100dvh - 52px); padding: 36px max(28px, calc((100vw - 1000px) / 2)) max(36px, env(safe-area-inset-bottom)); background: radial-gradient(circle at 80% 10%, #15243b 0, #07101d 40%); }
 .content-page > .card { margin-top: 18px; }
 .game-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+.game-select-card { overflow: hidden; padding: 0; }
+.game-cover { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: cover; background: #173f3c; }
+.game-card-body { display: grid; gap: 14px; padding: 18px; }
+.game-card-title { justify-content: space-between; margin: 0; }
+.game-card-title h2 { margin: 0; }
+.duration-chip { padding: 5px 9px; border: 1px solid #3d6f6a; border-radius: 99px; background: rgba(55, 105, 91, .3); color: #a8e2c0; font-size: 12px; white-space: nowrap; }
 .history-game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 24px; }
 .history-game-card { min-height: 230px; display: flex; flex-direction: column; gap: 20px; padding: 22px; border: 1px solid #2b4260; border-radius: 18px; background: linear-gradient(145deg, rgba(19, 36, 58, .96), rgba(12, 25, 42, .96)); color: #edf2f7; text-align: left; cursor: pointer; box-shadow: 0 14px 34px rgba(0,0,0,.22); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
 .history-game-card:hover { transform: translateY(-2px); border-color: #4d78a8; box-shadow: 0 18px 42px rgba(0,0,0,.3); }
@@ -219,6 +225,17 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .center-guide { width: min(520px, 90%); padding: 26px; border: 1px solid #34506f; border-radius: 18px; background: #0f1b2c; box-shadow: 0 20px 60px rgba(0,0,0,.38); }
 .center-guide h2 { margin-top: 0; }
 .center-guide p { color: #b8c6d8; line-height: 1.7; }
+.tutorial-guide { text-align: center; }
+.tutorial-guide .calibration-progress { margin: 22px 0 12px; }
+.training-dialog-backdrop { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(1, 7, 15, .76); }
+.training-dialog-backdrop.confirm-layer { z-index: 55; }
+.training-dialog { width: min(620px, 100%); max-height: calc(100dvh - 48px); overflow: auto; padding: 26px; border: 1px solid #34506f; border-radius: 20px; background: #0f1b2c; box-shadow: 0 28px 80px rgba(0,0,0,.56); }
+.training-dialog h2 { margin-top: 6px; }
+.training-dialog > p { color: #b8c6d8; line-height: 1.65; }
+.instruction-list { display: grid; gap: 10px; margin: 18px 0; }
+.instruction-list article { padding: 14px; border: 1px solid #2b4260; border-radius: 12px; background: #0a1727; }
+.instruction-list strong { color: #8fd8ff; }
+.instruction-list p { margin: 6px 0 0; color: #b8c6d8; line-height: 1.55; }
 .calibration-progress { height: 10px; overflow: hidden; border-radius: 99px; background: #0a1727; }
 .calibration-progress span { display: block; height: 100%; background: #4da3ff; transition: width .15s linear; }
 .success-text { color: #68d391; }
@@ -328,6 +345,8 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
   .device-dialog { max-height: calc(100dvh - 24px); }
   .update-dialog-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
   .update-dialog { max-height: calc(100dvh - 24px); border-radius: 16px; }
+  .training-dialog-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .training-dialog { max-height: calc(100dvh - 24px); padding: 20px; }
   .update-dialog > header, .update-dialog-body { padding: 18px; }
   .update-dialog > footer { padding: 0 18px 18px; }
   .update-version-row, .update-policy-field { align-items: flex-start; flex-direction: column; gap: 8px; }

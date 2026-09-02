@@ -1,10 +1,10 @@
-# RehabGame 0.8.0
+# RehabGame 0.9.0
 
-RehabGame 是面向 BS-BT91 传感器的跨平台康复训练应用。Windows 使用 Tauri，Android 使用 Capacitor，两端共享 BLE 数据解析、运动处理、训练、历史与轨迹回放代码。0.8.0 在 V0.7 多游戏能力之上增加 Windows / Android 在线更新系统。
+RehabGame 是面向 BS-BT91 传感器的跨平台康复训练应用。Windows 使用 Tauri，Android 使用 Capacitor，两端共享 BLE 数据解析、运动处理、训练、历史与轨迹回放代码。0.9.0 新增“森林溪谷漂流”，形成三款正式训练游戏。
 
 ```text
 BS-BT91 → BLE 自动恢复 → 每局中心 Zero → MotionProfile
-→ MotionProcessor → GameInput → TargetReach / TrajectoryFollow
+→ MotionProcessor → GameInput → TargetReach / TrajectoryFollow / Forest River
 → TrainingRecord → History / Replay
 ```
 
@@ -12,7 +12,8 @@ BS-BT91 → BLE 自动恢复 → 每局中心 Zero → MotionProfile
 
 - Windows Tauri 与 Android Capacitor BLE：扫描、连接、Notify、Write、断线恢复及电量状态。
 - 中心校准、四方向个人 ROM、MotionProfile 持久化与每局训练前置。
-- 四方向目标触达和 8 字轨迹跟随两款正式训练游戏。
+- 四方向目标触达、8 字轨迹跟随和森林溪谷漂流三款正式训练游戏。
+- River 包含首次交互教程、星星/训练门/避障/保持任务、保守动态难度、结果统计与事实回放。
 - IndexedDB 混合训练历史，以及动态、Seek、倍速和完整二维轨迹回放。
 - Windows Tauri Updater：签名更新包检查、下载和安装。
 - Android 本地更新插件：APK 下载、SHA-256、包名、版本号和签名证书校验，以及 PackageInstaller 安装。
@@ -41,10 +42,10 @@ npm run version:sync
 npm run version:check
 ```
 
-0.8.0 固定使用：
+0.9.0 固定使用：
 
-- Windows：`RehabGame / com.rehabgame.app / 0.8.0`
-- Android：`versionName 0.8.0 / versionCode 8`
+- Windows：`RehabGame / com.rehabgame.app / 0.9.0`
+- Android：`versionName 0.9.0 / versionCode 9`
 - GitHub Releases：`NovSyang/RehabGame`
 
 ## 签名构建
@@ -64,7 +65,7 @@ npm run android:build:release
 npm run android:bundle
 ```
 
-Android Release 任务缺少签名变量时会主动失败，Debug 构建不受影响。旧 Debug APK 与正式 Release APK 的签名不同，首次切换到 Release 0.8.0 时需要卸载 Debug APK；卸载会同时清除应用的 localStorage、IndexedDB、个人 ROM、绑定和训练历史。
+Android Release 任务缺少签名变量时会主动失败，Debug 构建不受影响。旧 Debug APK 与正式 Release APK 的签名不同，首次切换到 Release 安装时需要卸载 Debug APK；卸载会同时清除应用的 localStorage、IndexedDB、个人 ROM、绑定和训练历史。
 
 ## 发布清单
 
@@ -77,7 +78,11 @@ npm run release:manifest:android
 
 脚本默认读取标准 Release 输出路径。需要自定义路径或发布说明时，可直接执行 `node scripts/generate-tauri-update-manifest.mjs --artifact <path> --notes <path>` 或 Android 对应脚本，避免不同 npm 版本对附加参数的处理差异。
 
-人工创建 `v0.8.0` GitHub Release，并上传 Windows 更新包、对应 `.sig`、Android Release APK、`latest.json`、`android-latest.json` 和 `SHA256SUMS.txt`。不要上传私钥、JKS、密码或 `.env`。
+人工创建对应版本 GitHub Release，并上传 Windows 更新包、对应 `.sig`、Android Release APK、`latest.json`、`android-latest.json` 和 `SHA256SUMS.txt`。不要上传私钥、JKS、密码或 `.env`。
+
+## River 素材
+
+River 正式美术位于 `public/assets/games/river/`，生成提示保存在同目录 `GENERATED_ASSETS.md`。随包 CC0 音频的来源、许可与文件映射见 `THIRD_PARTY_ASSETS.md`。
 
 ## 0.8.1 升级验收
 

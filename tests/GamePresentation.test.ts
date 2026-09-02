@@ -6,14 +6,18 @@ import { defaultTargetReachGameConfig } from '../src/games/target-reach/TargetRe
 import { buildTargetReachTrainingResult } from '../src/games/target-reach/TargetReachTrainingResult'
 import { defaultTrajectoryFollowGameConfig } from '../src/games/trajectory-follow/TrajectoryFollowGameConfig'
 import { buildTrajectoryFollowTrainingResult } from '../src/games/trajectory-follow/TrajectoryFollowTrainingResult'
+import { defaultRiverGameConfig } from '../src/games/river/RiverGameConfig'
+import { buildRiverTrainingResult } from '../src/games/river/RiverTrainingResult'
 
 describe('游戏结果 Presenter', () => {
-  it('分别生成 TargetReach 与 TrajectoryFollow 主指标', () => {
+  it('分别生成三款正式游戏的主指标', () => {
     const common = { schemaVersion: 2 as const, id: 'id', completedAt: 1, motionProfile: createDefaultMotionProfile(1), replay: null }
     const target: TrainingRecord<any, any> = { ...common, gameId: 'target-reach', gameName: '四方向目标触达', result: buildTargetReachTrainingResult(0, 1, 1, []), gameConfig: defaultTargetReachGameConfig }
     const trajectory: TrainingRecord<any, any> = { ...common, gameId: 'trajectory-follow', gameName: '轨迹跟随训练', result: buildTrajectoryFollowTrainingResult(0, 1000, 1000, [0.1], 0.18), gameConfig: defaultTrajectoryFollowGameConfig }
+    const river: TrainingRecord<any, any> = { ...common, gameId: 'forest-river', gameName: '森林溪谷漂流', result: buildRiverTrainingResult(0, 1000, 1000, { score: 100, maxCombo: 1, starsTotal: 20, starsCollected: 15, gateDirections: [], successfulGateDirections: [], gateReactionTimesMs: [], collisionCount: 0, holdsTotal: 2, holdsSucceeded: 0, holdStabilities: [], accelerationDurationMs: 0, decelerationDurationMs: 0, speedSamples: [60], inputSamples: [] }), gameConfig: defaultRiverGameConfig }
     expect(presentTrainingRecord(target)?.metrics[0]).toEqual({ label: '成功率', value: '0%' })
     expect(presentTrainingRecord(trajectory)?.metrics[0]).toEqual({ label: '范围内比例', value: '100%' })
+    expect(presentTrainingRecord(river)?.metrics[0]).toEqual({ label: '星星收集率', value: '75%' })
   })
 
   it('未知游戏返回安全降级结果', () => {

@@ -301,3 +301,36 @@
 - [ ] 校验 SHA-256、包名、versionCode 或签名证书不匹配时均拒绝 Android 安装
 - [ ] 验证三种更新策略、训练/ROM 安全锁、网络失败与“稍后更新”
 - [ ] 验证升级后 Profile、Binding、训练历史和 Replay 保持不变
+
+## V0.9 森林溪谷漂流与 Game Framework V1
+
+### 框架与训练流程
+
+- [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导
+- [x] 教程按标准化 `GameInput` 完成左、右、加速、减速 400ms 保持，并使用 `rehab.game-tutorial.v1` 持久化
+- [x] 教程位于中心校准之后、训练倒计时之前，不进入训练时长和 Replay
+- [x] 训练暂停提供继续、玩法说明与结束入口；未完成训练退出前统一确认且不保存历史
+- [x] River 初始开始和恢复均提供 3 秒准备时间
+
+### River 正式游戏
+
+- [x] 固定 10,800 世界单位、六段任务、20 星星、10 训练门、8 障碍和 2 HoldZone
+- [x] 控制死区、横向加速度/阻尼、45–80 前进速度、软边界和碰撞减速保护
+- [x] 星星、训练门、Hold、Combo 计分以及 assist/normal/challenge 保守动态难度
+- [x] River 结果覆盖得分、Combo、收集、三方向门、碰撞、稳定度、反应、速度和输入极值
+- [x] TrainingRecord V2 / Replay V1 保持不变，保存 River 世界快照、船体 25Hz 轨迹与事实事件
+- [x] River 动态回放和世界坐标完整轨迹不重新运行游戏判定
+
+### 美术、音频与自动验证
+
+- [x] 封面、小船、星星、岩石、漂木与植被正式本地素材及生成记录
+- [x] CC0 Forest Ambience、Kenney Interface Sounds 与 Music Jingles 本地打包和许可清单
+- [x] 音频音量、暂停/恢复、播放失败降级与销毁流程
+- [x] 42 个测试文件、167 项单元测试与 `npm run build` 通过
+- [x] Android Debug APK 构建通过，River 图像与音频已随 Web Assets 打包
+- [x] Windows Release 主程序与 `RehabGame_0.9.0_x64-setup.exe` 编译完成
+- [ ] 当前验证进程缺少 `TAURI_SIGNING_PRIVATE_KEY`，需注入私钥后补验 Updater `.sig`
+- [ ] 当前验证进程缺少 Android Release 签名变量，需注入既有 JKS 后补验 Signed APK
+- [ ] Windows / Android 双端真实设备方向映射、完整关卡和主动结束回归
+- [ ] 暂停、后台、断线重校准、恢复倒计时、历史与 River Replay 实机回归
+- [ ] 桌面 60 FPS、Android 目标 60 FPS/最低 30 FPS 与连续多局 30 分钟稳定性验收

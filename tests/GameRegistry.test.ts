@@ -3,11 +3,12 @@ import { createGameRegistry, getGameDefinitions, getGameModule } from '../src/ga
 import { targetReachGameModule } from '../src/games/target-reach/TargetReachGameModule'
 
 describe('GameRegistry', () => {
-  it('注册两款正式游戏并安全处理未知 ID', () => {
+  it('注册三款正式游戏并安全处理未知 ID', () => {
     expect(getGameModule('target-reach')?.definition.name).toBe('四方向目标触达')
     expect(getGameModule('trajectory-follow')?.definition.name).toBe('轨迹跟随训练')
     expect(getGameModule('not-exist')).toBeNull()
-    expect(getGameDefinitions().map((game) => game.id)).toEqual(['target-reach', 'trajectory-follow'])
+    expect(getGameModule('forest-river')?.definition.name).toBe('森林溪谷漂流')
+    expect(getGameDefinitions().map((game) => game.id)).toEqual(['target-reach', 'trajectory-follow', 'forest-river'])
   })
 
   it('拒绝重复游戏 ID', () => {

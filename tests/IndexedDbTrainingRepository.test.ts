@@ -7,6 +7,8 @@ import type { TrainingReplay } from '../src/core/replay/TrainingReplay'
 import type { TargetReachTrainingResult } from '../src/games/target-reach/TargetReachTrainingResult'
 import { defaultTrajectoryFollowGameConfig } from '../src/games/trajectory-follow/TrajectoryFollowGameConfig'
 import type { TrajectoryFollowTrainingResult } from '../src/games/trajectory-follow/TrajectoryFollowTrainingResult'
+import { defaultRiverGameConfig } from '../src/games/river/RiverGameConfig'
+import type { RiverTrainingResult } from '../src/games/river/RiverTrainingResult'
 
 function record(id: string, completedAt: number): TrainingRecord<TargetReachTrainingResult> {
   return {
@@ -26,6 +28,16 @@ function trajectoryRecord(id: string, completedAt: number): TrainingRecord<Traje
   }
 }
 
+/** River 继续使用 V2 Record 和 V1 Replay，不升级 IndexedDB。 */
+function riverRecord(id: string, completedAt: number): TrainingRecord<RiverTrainingResult, typeof defaultRiverGameConfig> {
+  return {
+    schemaVersion: 2, id, gameId: 'forest-river', gameName: '森林溪谷漂流', completedAt,
+    motionProfile: createDefaultMotionProfile(1), gameConfig: structuredClone(defaultRiverGameConfig),
+    result: { startedAt: 1, endedAt: 2, durationMs: 1, score: 100, maxCombo: 1, starsTotal: 20, starsCollected: 1, gatesTotal: 10, gatesSucceeded: 0, gatesByDirection: { left: { total: 3, success: 0 }, center: { total: 3, success: 0 }, right: { total: 4, success: 0 } }, collisionCount: 0, holdsTotal: 2, holdsSucceeded: 0, averageHoldStability: null, averageGateReactionMs: null, accelerationDurationMs: 0, decelerationDurationMs: 0, averageForwardSpeed: 60, inputExtremes: { minX: 0, maxX: 0, minY: 0, maxY: 0 } },
+    replay: { schemaVersion: 1, durationMs: 1, sampleRateHz: 25, samples: [], events: [{ elapsedMs: 1, type: 'river-run-snapshot', payload: { levelLength: 10_800, riverHalfWidth: 390, objects: [], boatSamples: [] } }] },
+  }
+}
+
 beforeEach(async () => { await new Promise<void>((resolve) => { const request = indexedDB.deleteDatabase('rehab-game'); request.onsuccess = () => resolve(); request.onerror = () => resolve() }) })
 
 describe('IndexedDbTrainingRepository', () => {
@@ -35,11 +47,13 @@ describe('IndexedDbTrainingRepository', () => {
     await repository.save(record('old', 1))
     await repository.save({ ...record('new', 2), schemaVersion: 2, replay })
     await repository.save(trajectoryRecord('trajectory', 3))
-    expect((await repository.getAll()).map((item) => item.id)).toEqual(['trajectory', 'new', 'old'])
+    await repository.save(riverRecord('river', 4))
+    expect((await repository.getAll()).map((item) => item.id)).toEqual(['river', 'trajectory', 'new', 'old'])
     expect((await repository.getById('old'))?.completedAt).toBe(1)
     expect((await repository.getById('old'))?.replay).toBeUndefined()
     expect((await repository.getById('new'))?.replay).toEqual(replay)
     expect((await repository.getById('trajectory'))?.gameId).toBe('trajectory-follow')
+    expect((await repository.getById('river'))?.gameId).toBe('forest-river')
     await repository.delete('old')
     expect(await repository.getById('old')).toBeNull()
   })

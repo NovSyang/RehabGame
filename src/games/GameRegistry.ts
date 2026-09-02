@@ -2,6 +2,7 @@ import type { GameDefinition } from '../core/game/GameDefinition'
 import type { GameModule } from '../core/game/GameModule'
 import { targetReachGameModule } from './target-reach/TargetReachGameModule'
 import { trajectoryFollowGameModule } from './trajectory-follow/TrajectoryFollowGameModule'
+import { riverGameModule } from './river/RiverGameModule'
 
 /** Registry 需要容纳不同 Result/Config 泛型，实际解释始终由对应模块完成。 */
 export type RegisteredGameModule = GameModule<any, any>
@@ -16,7 +17,7 @@ export function createGameRegistry(modules: readonly RegisteredGameModule[]): Ma
   return registry
 }
 
-const gameRegistry = createGameRegistry([targetReachGameModule, trajectoryFollowGameModule])
+const gameRegistry = createGameRegistry([targetReachGameModule, trajectoryFollowGameModule, riverGameModule])
 
 export function getGameModule(gameId: string): RegisteredGameModule | null {
   return gameRegistry.get(gameId) ?? null

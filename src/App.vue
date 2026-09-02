@@ -28,10 +28,8 @@ onMounted(async () => {
   })
   // Android Back 在训练中先确认，普通页面继续遵守 Vue Router 历史。
   unsubscribeBack = backButtonService.onBack(({ canGoBack }) => {
-    if (route.meta.trainingLayout === true) {
-      if (window.confirm('确认结束当前训练吗？\n\n当前未完成的训练不会保存。')) void router.push('/games')
-      return
-    }
+    // TrainingView 的路由守卫统一展示项目风格的结束确认。
+    if (route.meta.trainingLayout === true) { void router.push('/games'); return }
     if (canGoBack) router.back()
     else void backButtonService.minimizeApp()
   })

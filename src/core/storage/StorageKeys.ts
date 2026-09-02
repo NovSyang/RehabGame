@@ -2,4 +2,5 @@
 export const StorageKeys = {
   motionProfile: 'rehab.motion-profile.v1',
   lastDevice: 'rehab.last-device.v1',
+  gameTutorial: 'rehab.game-tutorial.v1',
 } as const
