@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import CenterCalibrationGuide from '../components/calibration/CenterCalibrationGuide.vue'
-import RomCalibrationPanel from '../components/rom/RomCalibrationPanel.vue'
+import GuidedRomCalibrationFlow from '../components/rom/GuidedRomCalibrationFlow.vue'
 import { motionProfileService, updateInstallGuard } from '../app/AppServices'
 import { profileFromMeasuredRange } from '../core/motion/MotionProfile'
 import type { MotionRange } from '../core/motion/MotionConfig'
 
 const router = useRouter()
 const route = useRoute()
-const phase = ref<'center' | 'rom'>('center')
-const errorMessage = ref('')
 const source = computed(() => route.query.source === 'settings' ? 'settings' : 'setup')
 let releaseUpdateLock: (() => void) | null = null
 
@@ -18,13 +15,18 @@ let releaseUpdateLock: (() => void) | null = null
 onMounted(() => { releaseUpdateLock = updateInstallGuard.acquire('rom-calibration') })
 onBeforeUnmount(() => releaseUpdateLock?.())
 
-// 从设置重新测量时，旧 Profile 一直保留到四方向全部完成并保存。
-function centerCompleted(): void { phase.value = 'rom' }
-async function completed(range: MotionRange): Promise<void> {
-  try { await motionProfileService.save(profileFromMeasuredRange(range, motionProfileService.getCurrent())); await router.replace(source.value === 'settings' ? '/settings' : '/games') }
-  catch (error) { errorMessage.value = error instanceof Error ? error.message : String(error) }
+/** 从设置重新测量时，旧 Profile 一直保留到汇总页明确保存。 */
+async function persist(range: MotionRange): Promise<void> {
+  await motionProfileService.save(profileFromMeasuredRange(range, motionProfileService.getCurrent()))
+  await router.replace(source.value === 'settings' ? '/settings' : '/games')
 }
 function cancel(): void { void router.replace(source.value === 'settings' ? '/settings' : '/games') }
 </script>
 
-<template><main class="content-page"><p class="eyebrow">个人 ROM</p><h1>{{ phase === 'center' ? '确认自然中心' : '重新测量个人活动范围' }}</h1><CenterCalibrationGuide v-if="phase === 'center'" @completed="centerCompleted" /><RomCalibrationPanel v-else @completed="completed" @cancelled="cancel" /><p v-if="errorMessage" class="error">{{ errorMessage }}</p></main></template>
+<template>
+  <main class="content-page rom-calibration-page">
+    <p class="eyebrow">PERSONAL ROM</p>
+    <h1>个人活动范围测量</h1>
+    <GuidedRomCalibrationFlow :persist="persist" @cancelled="cancel" />
+  </main>
+</template>

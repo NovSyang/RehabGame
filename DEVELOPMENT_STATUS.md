@@ -304,6 +304,19 @@
 
 ## V0.9 森林溪谷漂流与 Game Framework V1
 
+### 个人 ROM 引导式测量
+
+- [x] 新增纯逻辑 `GuidedRomWorkflow`，统一中心、四方向、倒计时、重试、回中心、保存与断线状态
+- [x] 固定自然中心、向前、向后、向左、向右五步顺序，并在测量开始前提供 3 秒准备倒计时
+- [x] 有效方向结果自动接受；无效结果只重测当前方向，不向普通用户展示工程样本数
+- [x] 回中心使用 2° 二维距离、600ms 连续稳定和 5 秒人工确认兜底
+- [x] 首次设置与 Settings 重测复用同一引导组件，只有汇总确认后才覆盖旧 MotionProfile
+- [x] BLE 断线清空整轮未保存结果，重连后必须从自然中心重新开始
+- [x] 桌面五步进度与 390px 手机进度圆点、52px 主按钮和无横向溢出检查
+- [x] 43 个测试文件、175 项单元测试、`npm run build`、Android Debug APK 与 `cargo check` 通过
+- [ ] Windows Tauri 与 Android 真机完成五步 ROM、自动回中心、断线整套重做和 Profile 应用回归
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导
