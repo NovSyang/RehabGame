@@ -7,16 +7,19 @@ import type { TargetReachGameConfig } from '../src/games/target-reach/TargetReac
 import type { TargetReachReplayEvent } from '../src/games/target-reach/replay/TargetReachReplayEvent'
 
 const config: TargetReachGameConfig = {
-  sessionDurationMs: 60_000, targetCount: 20, targetDistance: 0.7, targetRadius: 0.2,
-  playerRadius: 20, holdTimeMs: 300, targetTimeoutMs: 8000, movementThreshold: 0.08,
+  sessionDurationMs: 60_000, targetCount: 20, targetDistance: 0.7, targetRadiusNormalized: 0.12,
+  playerRadiusNormalized: 0.08, holdTimeMs: 300, targetTimeoutMs: 8000, movementThreshold: 0.08,
   enabledDirections: ['right'],
 }
 const neutral = (timestamp: number): GameInput => ({ x: 0, y: 0, connected: true, calibrated: true, timestamp })
 const onTarget = (timestamp: number): GameInput => ({ x: 0.7, y: 0, connected: true, calibrated: true, timestamp })
+const onTargetEdge = (timestamp: number): GameInput => ({ x: 0.5, y: 0, connected: true, calibrated: true, timestamp })
 
 interface GameInternals {
   session: TrainingSession
   attempts: TargetAttemptResult[]
+  currentContactState: 'outside' | 'holding' | 'success'
+  holdProgress: number
   update(now: number): void
 }
 
@@ -31,6 +34,31 @@ function createPlayingGame(): { game: TargetReachGame; internals: GameInternals 
 }
 
 describe('TargetReachGame 暂停计时', () => {
+  it('玩家与目标边缘刚好接触时开始 Hold，并在 300ms 后成功', () => {
+    const { game, internals } = createPlayingGame()
+    game.setInput(onTargetEdge(101)); internals.update(101)
+    expect(internals.attempts).toHaveLength(0)
+    expect(internals.currentContactState).toBe('holding')
+    internals.update(401)
+    expect(internals.attempts).toHaveLength(1)
+    expect(internals.attempts[0].success).toBe(true)
+  })
+
+  it('Hold 150ms 后离开会清零，重新进入后必须再次保持完整时间', () => {
+    const { game, internals } = createPlayingGame()
+    game.setInput(onTargetEdge(101)); internals.update(101)
+    internals.update(251)
+    expect(internals.holdProgress).toBeCloseTo(0.5)
+    game.setInput(neutral(252)); internals.update(252)
+    expect(internals.currentContactState).toBe('outside')
+    expect(internals.holdProgress).toBe(0)
+    game.setInput(onTargetEdge(300)); internals.update(300)
+    internals.update(599)
+    expect(internals.attempts).toHaveLength(0)
+    internals.update(600)
+    expect(internals.attempts).toHaveLength(1)
+  })
+
   it('无暂停时以有效训练时间记录反应与到达时间', () => {
     const { game, internals } = createPlayingGame()
     game.setInput(onTarget(501)); internals.update(501)

@@ -328,6 +328,19 @@
 - [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
 - [ ] Windows 与 Android 实机完成全屏、方向切换、三款游戏回放及 10–20 次资源清理回归
 
+### Android 沉浸式训练与 TargetReach Geometry 一致性
+
+- [x] 新增 Android 原生 Display Plugin，训练期间隐藏状态栏和导航栏，退出后恢复普通系统栏
+- [x] 横屏、沉浸模式和屏幕常亮独立降级，Activity 回到前台后重新应用训练显示模式
+- [x] WebView 使用 `viewport-fit=cover`、两帧布局稳定等待与紧凑 Safe Area
+- [x] TargetReach 玩家和目标半径统一为标准化 Geometry，并使用 Circle-vs-Circle 边缘接触判定
+- [x] 非等比训练空间将标准化圆映射为屏幕椭圆，Resize 后继续保持视觉与判定一致
+- [x] 增加 Hold 变色、连续进度光圈、成功脉冲和开发者 Geometry Debug Overlay
+- [x] 50 个测试文件、207 项单元测试、`npm run build` 与 Android Debug APK 构建通过
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+- [ ] Android 真机完成沉浸式系统栏、前后台恢复、边缘手势和多宽高比 TargetReach 判定验收
+- [ ] Windows 实机回归 TargetReach、暂停/断线恢复、历史保存和 Replay
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导

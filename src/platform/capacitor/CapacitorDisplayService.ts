@@ -1,6 +1,7 @@
 import { KeepAwake } from '@capacitor-community/keep-awake'
 import { ScreenOrientation } from '@capacitor/screen-orientation'
 import type { IDisplayService, TrainingDisplayState } from '../display/IDisplayService'
+import { RehabDisplay } from './RehabDisplayPlugin'
 
 /** Android 训练期间尽量锁定横屏并保持亮屏，单项失败不会阻止训练。 */
 export class CapacitorDisplayService implements IDisplayService {
@@ -17,13 +18,22 @@ export class CapacitorDisplayService implements IDisplayService {
   async unlockOrientation(): Promise<void> { await ScreenOrientation.unlock() }
 
   async enterTrainingMode(): Promise<TrainingDisplayState> {
-    const orientationLocked = await this.lockLandscape()
-    try { await KeepAwake.keepAwake() } catch { /* 不支持常亮时继续使用系统默认策略。 */ }
+    // 三项原生能力互不依赖，单项失败时仍允许患者开始训练。
+    const [orientationResult] = await Promise.allSettled([
+      this.lockLandscape(),
+      RehabDisplay.enterImmersiveMode(),
+      KeepAwake.keepAwake(),
+    ])
+    const orientationLocked = orientationResult.status === 'fulfilled' && orientationResult.value
     return { native: true, orientationLocked }
   }
 
   async leaveTrainingMode(): Promise<void> {
-    // 两项清理互不阻塞，确保其中一个失败时另一个仍会执行。
-    await Promise.allSettled([KeepAwake.allowSleep(), this.unlockOrientation()])
+    // 三项清理互不阻塞，确保其中一个失败时其他恢复动作仍会执行。
+    await Promise.allSettled([
+      RehabDisplay.exitImmersiveMode(),
+      KeepAwake.allowSleep(),
+      this.unlockOrientation(),
+    ])
   }
 }

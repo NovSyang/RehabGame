@@ -13,6 +13,7 @@ import type { BaseTrainingResult } from '../core/training/BaseTrainingResult'
 import type { TrainingSessionState } from '../core/training/TrainingSessionState'
 import { getGameModule } from '../games/GameRegistry'
 import { isAndroidNativeRuntime } from '../platform/PlatformRuntime'
+import { waitForAnimationFrames } from '../platform/display/DisplayLayout'
 
 type TrainingPreflightState = 'checking-device' | 'device-required' | 'center-guide' | 'tutorial' | 'ready' | 'playing' | 'recalibrating'
 
@@ -91,9 +92,9 @@ onMounted(async () => {
   const displayState = await displayService.enterTrainingMode()
   displayModeEntered = true
   if (displayState.native && !displayState.orientationLocked) displayMessage.value = '系统未能锁定横屏，建议将设备横向放置后继续训练。'
-  // 等待方向变化和 CSS 布局稳定后再创建 Pixi Canvas。
+  // 沉浸模式会再次扩大 WebView，需要等待两帧后再创建 Pixi Canvas。
   await nextTick()
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  await waitForAnimationFrames(2)
   if (!gameHost.value) { errorMessage.value = '游戏容器尚未创建。'; return }
   try {
     await game.mount(gameHost.value)

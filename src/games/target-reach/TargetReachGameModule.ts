@@ -43,7 +43,7 @@ export const targetReachGameModule: GameModule<TargetReachTrainingResult, Target
       },
       onReplayEvent: events.onReplayEvent,
       onCompleted: events.onCompleted,
-    })
+    }, { geometryDebug: isTargetReachGeometryDebugEnabled() })
     publishHud()
     return game
   },
@@ -51,6 +51,13 @@ export const targetReachGameModule: GameModule<TargetReachTrainingResult, Target
   getConfigSnapshot: () => structuredClone(defaultTargetReachGameConfig),
   presentResult: presentTargetReachResult,
   createReplayPlayer: () => new TargetReachReplayPlayer(),
+}
+
+/** Hash Router 的查询参数只在本次训练启用诊断，不进入配置和历史快照。 */
+export function isTargetReachGeometryDebugEnabled(hash = typeof window === 'undefined' ? '' : window.location.hash): boolean {
+  const queryIndex = hash.indexOf('?')
+  if (queryIndex < 0) return false
+  return new URLSearchParams(hash.slice(queryIndex + 1)).get('geometryDebug') === '1'
 }
 
 function targetReachHud(index: number, direction: Direction | null, success: number, completed: number, state: TrainingSessionState): GameHudSnapshot {
