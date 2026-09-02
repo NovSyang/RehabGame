@@ -12,6 +12,10 @@ body { margin: 0; min-width: 320px; min-height: 100vh; min-height: 100dvh; overf
 button, select { font: inherit; }
 
 .app-nav {
+  /* Sticky 保留导航占位，同时让普通页面滚动时仍可操作设备菜单。 */
+  position: sticky;
+  top: 0;
+  z-index: 35;
   min-height: 52px;
   display: flex;
   align-items: center;
@@ -250,7 +254,8 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 
 .history-dialog-backdrop {
   position: fixed;
-  z-index: 20;
+  /* 历史详情属于对话框层，必须覆盖固定在顶部的全局导航。 */
+  z-index: 40;
   inset: 0;
   display: grid;
   place-items: center;
