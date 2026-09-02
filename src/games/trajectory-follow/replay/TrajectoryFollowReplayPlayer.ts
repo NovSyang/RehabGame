@@ -9,6 +9,7 @@ import { clamp, downsampleForDisplay, sampleAtElapsed } from '../../../core/repl
 import type { ReplayEvent, TrainingReplay } from '../../../core/replay/TrainingReplay'
 import { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 import type { TrajectoryReferenceSample } from '../TrajectoryFollowMath'
+import { resizeReplayRendererToHost } from '../../../core/replay/ReplayPlayerResize'
 
 /** 只播放保存的患者轨迹和参考路径，不重新计算 8 字公式或训练指标。 */
 export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
@@ -26,6 +27,8 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
   private guideGraphic: Graphics | null = null
   private listeners = new Set<(snapshot: ReplayPlayerSnapshot) => void>()
   private resizeObserver: ResizeObserver | null = null
+  private host: HTMLElement | null = null
+  private resizeFrameId: number | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -38,8 +41,9 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
     this.playerGraphic = new Graphics()
     app.stage.addChild(this.referenceGraphic, this.patientPathGraphic, this.guideGraphic, this.playerGraphic)
     this.app = app
+    this.host = container
     // 参考路径和患者完整轨迹在弹窗尺寸变化后按新画布重新绘制。
-    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render()))
+    this.resizeObserver = new ResizeObserver(() => this.scheduleResize())
     this.resizeObserver.observe(container)
     app.ticker.add(() => this.tick(performance.now()))
     this.render()
@@ -105,6 +109,9 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
   destroy(): void {
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = null
+    this.host = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.referenceGraphic = null
@@ -124,6 +131,15 @@ export class TrajectoryFollowReplayPlayer implements ITrainingReplayPlayer {
     } else this.currentTimeMs = next
     this.render()
     this.publish()
+  }
+
+  /** 容器变化时同步 Renderer，再按新屏幕范围绘制参考与患者轨迹。 */
+  private scheduleResize(): void {
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = requestAnimationFrame(() => {
+      this.resizeFrameId = null
+      if (this.app && this.host) resizeReplayRendererToHost(this.app, this.host, () => this.render())
+    })
   }
 
   private render(): void {

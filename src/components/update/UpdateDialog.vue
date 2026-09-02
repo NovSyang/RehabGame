@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { updateService } from '../../app/AppServices'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { backActionCoordinator, updateService } from '../../app/AppServices'
+import { BACK_ACTION_PRIORITY } from '../../core/navigation/BackActionCoordinator'
 import type { AppUpdateSnapshot } from '../../core/update/AppUpdateService'
 
 // 全局弹窗订阅单例服务，路由切换时不会重复创建下载任务。
@@ -8,19 +9,23 @@ const snapshot = ref<AppUpdateSnapshot>(updateService.getSnapshot())
 const visible = computed(() => snapshot.value.dialogVisible && snapshot.value.info !== null)
 const canDismiss = computed(() => !['downloading', 'installing'].includes(snapshot.value.state))
 let unsubscribe: (() => void) | null = null
+let unregisterBackAction: (() => void) | null = null
 
 onMounted(() => {
   unsubscribe = updateService.onSnapshot((next) => { snapshot.value = next })
-  window.addEventListener('keydown', handleKeydown)
 })
 onBeforeUnmount(() => {
   unsubscribe?.()
-  window.removeEventListener('keydown', handleKeydown)
+  unregisterBackAction?.()
 })
 
-function handleKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && visible.value && canDismiss.value) updateService.dismissDialog()
-}
+// 更新弹窗位于最高层；安装期间也要消费返回操作，避免误退到底层页面。
+watch(visible, (next) => {
+  unregisterBackAction?.()
+  unregisterBackAction = next
+    ? backActionCoordinator.register(BACK_ACTION_PRIORITY.updateDialog, () => { if (canDismiss.value) dismiss() })
+    : null
+}, { immediate: true })
 
 function dismiss(): void { if (canDismiss.value) updateService.dismissDialog() }
 function updateNow(): void { void updateService.downloadAndInstall() }

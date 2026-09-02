@@ -5,6 +5,7 @@ import type { TrainingReplay } from '../../../core/replay/TrainingReplay'
 import { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 import { laneX } from '../RiverControl'
 import type { RiverBoatSample, RiverRunSnapshot } from '../RiverReplayTypes'
+import { resizeReplayRendererToHost } from '../../../core/replay/ReplayPlayerResize'
 
 /** River 回放只读取当局快照，不重新运行关卡、碰撞或动态难度。 */
 export class RiverReplayPlayer implements ITrainingReplayPlayer {
@@ -23,6 +24,8 @@ export class RiverReplayPlayer implements ITrainingReplayPlayer {
   private lastTickAt = 0
   private listeners = new Set<(snapshot: ReplayPlayerSnapshot) => void>()
   private resizeObserver: ResizeObserver | null = null
+  private host: HTMLElement | null = null
+  private resizeFrameId: number | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -39,7 +42,8 @@ export class RiverReplayPlayer implements ITrainingReplayPlayer {
     app.stage.addChild(scene)
     this.app = app
     this.scene = scene
-    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render()))
+    this.host = container
+    this.resizeObserver = new ResizeObserver(() => this.scheduleResize())
     this.resizeObserver.observe(container)
     app.ticker.add(() => this.tick(performance.now()))
   }
@@ -78,6 +82,9 @@ export class RiverReplayPlayer implements ITrainingReplayPlayer {
   destroy(): void {
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = null
+    this.host = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.scene = null
@@ -96,6 +103,15 @@ export class RiverReplayPlayer implements ITrainingReplayPlayer {
     else this.currentTimeMs = next
     this.render()
     this.publish()
+  }
+
+  /** River 场景直接使用宽高布局，全屏切换后必须同步内部画布尺寸。 */
+  private scheduleResize(): void {
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = requestAnimationFrame(() => {
+      this.resizeFrameId = null
+      if (this.app && this.host) resizeReplayRendererToHost(this.app, this.host, () => this.render())
+    })
   }
 
   private render(): void {

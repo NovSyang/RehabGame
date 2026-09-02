@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useRoute, useRouter } from 'vue-router'
-import { appLifecycleService, backButtonService, connectionManager, initializeAppServices, transport, updateService } from './app/AppServices'
+import { appLifecycleService, backActionCoordinator, backButtonService, connectionManager, initializeAppServices, transport, updateService } from './app/AppServices'
 import DeviceConnectionLoading from './components/app/DeviceConnectionLoading.vue'
 import DeviceConnectionStatus from './components/app/DeviceConnectionStatus.vue'
 import UpdateDialog from './components/update/UpdateDialog.vue'
@@ -17,8 +17,16 @@ let unsubscribeBack: (() => void) | null = null
 let unsubscribeUpdateLifecycle: (() => void) | null = null
 let startupUpdateTimer: number | null = null
 
+/** ESC 与 Android Back 共用浮层优先级，一次操作只退出一个界面层级。 */
+function handleEscape(event: KeyboardEvent): void {
+  if (event.key !== 'Escape' || !backActionCoordinator.handle()) return
+  event.preventDefault()
+  event.stopPropagation()
+}
+
 // 全局只初始化一次服务，页面切换不会中断 BLE 监听或丢失当前 Profile。
 onMounted(async () => {
+  window.addEventListener('keydown', handleEscape)
   try { await initializeAppServices() }
   catch (error) { startupError.value = error instanceof Error ? error.message : String(error) }
   // 更新检查延后执行，不阻塞首屏、Profile 加载或 BLE 自动连接。
@@ -28,6 +36,7 @@ onMounted(async () => {
   })
   // Android Back 在训练中先确认，普通页面继续遵守 Vue Router 历史。
   unsubscribeBack = backButtonService.onBack(({ canGoBack }) => {
+    if (backActionCoordinator.handle()) return
     // TrainingView 的路由守卫统一展示项目风格的结束确认。
     if (route.meta.trainingLayout === true) { void router.push('/games'); return }
     if (canGoBack) router.back()
@@ -36,6 +45,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(async () => {
+  window.removeEventListener('keydown', handleEscape)
   unsubscribeBack?.()
   unsubscribeUpdateLifecycle?.()
   if (startupUpdateTimer !== null) window.clearTimeout(startupUpdateTimer)

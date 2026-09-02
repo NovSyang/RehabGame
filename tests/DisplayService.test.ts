@@ -9,6 +9,7 @@ vi.mock('@capacitor/screen-orientation', () => ({ ScreenOrientation: { lock, unl
 vi.mock('@capacitor-community/keep-awake', () => ({ KeepAwake: { keepAwake, allowSleep } }))
 
 import { CapacitorDisplayService } from '../src/platform/capacitor/CapacitorDisplayService'
+import { NoopDisplayService } from '../src/platform/display/NoopDisplayService'
 
 describe('CapacitorDisplayService', () => {
   beforeEach(() => {
@@ -34,5 +35,20 @@ describe('CapacitorDisplayService', () => {
     const service = new CapacitorDisplayService()
     await expect(service.enterTrainingMode()).resolves.toEqual({ native: true, orientationLocked: false })
     expect(keepAwake).toHaveBeenCalledOnce()
+  })
+
+  it('历史回放可单独锁定和解除方向，不启用屏幕常亮', async () => {
+    const service = new CapacitorDisplayService()
+    await expect(service.lockLandscape()).resolves.toBe(true)
+    await service.unlockOrientation()
+    expect(lock).toHaveBeenCalledWith({ orientation: 'landscape' })
+    expect(unlock).toHaveBeenCalledOnce()
+    expect(keepAwake).not.toHaveBeenCalled()
+  })
+
+  it('非原生平台的方向控制保持安全空操作', async () => {
+    const service = new NoopDisplayService()
+    await expect(service.lockLandscape()).resolves.toBe(true)
+    await expect(service.unlockOrientation()).resolves.toBeUndefined()
   })
 })

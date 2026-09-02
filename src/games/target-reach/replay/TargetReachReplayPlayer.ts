@@ -3,6 +3,7 @@ import type { ITrainingReplayPlayer, ReplayMode, ReplayPlayerSnapshot, ReplayPla
 import { downsampleForDisplay, sampleAtElapsed } from '../../../core/replay/ReplayMath'
 import { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 import type { ReplayEvent, TrainingReplay } from '../../../core/replay/TrainingReplay'
+import { resizeReplayRendererToHost } from '../../../core/replay/ReplayPlayerResize'
 
 export type { ReplayMode, ReplayPlayerSnapshot, ReplayPlayerState } from '../../../core/replay/ITrainingReplayPlayer'
 export { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
@@ -32,6 +33,8 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   private labels = new Container()
   private listeners = new Set<(snapshot: ReplayPlayerSnapshot) => void>()
   private resizeObserver: ResizeObserver | null = null
+  private host: HTMLElement | null = null
+  private resizeFrameId: number | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -43,8 +46,9 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     this.pathGraphic = new Graphics()
     app.stage.addChild(this.pathGraphic, this.targetGraphic, this.playerGraphic, this.labels)
     this.app = app
+    this.host = container
     // 回放的完整轨迹是静态几何，Dialog 尺寸变化后需要重新映射坐标。
-    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.render()))
+    this.resizeObserver = new ResizeObserver(() => this.scheduleResize())
     this.resizeObserver.observe(container)
     app.ticker.add(() => this.tick(performance.now()))
     this.render()
@@ -109,6 +113,9 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   destroy(): void {
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = null
+    this.host = null
     this.app?.destroy(true, { children: true })
     this.app = null
     this.playerGraphic = null
@@ -129,6 +136,15 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     } else this.currentTimeMs = next
     this.render()
     this.publish()
+  }
+
+  /** Teleport 只改变 Host 尺寸，因此需要显式更新 Pixi 的逻辑画布。 */
+  private scheduleResize(): void {
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = requestAnimationFrame(() => {
+      this.resizeFrameId = null
+      if (this.app && this.host) resizeReplayRendererToHost(this.app, this.host, () => this.render())
+    })
   }
 
   private render(): void {

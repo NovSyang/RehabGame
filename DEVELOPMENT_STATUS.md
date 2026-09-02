@@ -317,6 +317,17 @@
 - [ ] Windows Tauri 与 Android 真机完成五步 ROM、自动回中心、断线整套重做和 Profile 应用回归
 - [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
 
+### 历史轨迹回放应用内全屏
+
+- [x] `TrainingReplayPanel` 使用同一组件和同一 Pixi Player 在普通详情与应用内全屏之间切换
+- [x] 展开与退出保持模式、播放位置、倍速和播放状态，不重新加载历史 Replay
+- [x] ESC 与 Android Back 按 Update、Replay 全屏、History、Router 的优先级逐层返回
+- [x] Android 回放全屏单独锁定横屏，退出后解除方向锁且不启用训练常亮模式
+- [x] TargetReach、TrajectoryFollow 与 River 在 Host 变化时显式 Resize Renderer 并重新绘制
+- [x] 46 个测试文件、187 项单元测试、`npm run build`、Android Debug APK 与 `cargo check` 通过
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+- [ ] Windows 与 Android 实机完成全屏、方向切换、三款游戏回放及 10–20 次资源清理回归
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导

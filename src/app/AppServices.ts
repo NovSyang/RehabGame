@@ -20,12 +20,14 @@ import { UpdateInstallGuard } from '../core/update/UpdateInstallGuard'
 import { UpdatePolicyRepository } from '../core/update/UpdatePolicyRepository'
 import { createUpdateProvider } from '../platform/update/createUpdateProvider'
 import { GameTutorialRepository } from '../core/game/GameTutorialRepository'
+import { BackActionCoordinator } from '../core/navigation/BackActionCoordinator'
 
 /** 应用级单例服务，确保切换页面时不会重复创建 BLE 监听与传感器处理链路。 */
 export const transport = createSensorTransport()
 export const displayService = createDisplayService()
 export const appLifecycleService = createAppLifecycleService()
 export const backButtonService = createBackButtonService()
+export const backActionCoordinator = new BackActionCoordinator()
 export const sensorService = new SensorService(transport)
 const localStore = new LocalStorageStore()
 export const gameTutorialRepository = new GameTutorialRepository(localStore)
