@@ -58,7 +58,10 @@ async function mountPlayer(): Promise<void> {
   if (!replay) return
   const module = getGameModule(props.record.gameId)
   if (!module) { unavailableMessage.value = '当前版本无法识别该游戏，暂不能播放历史轨迹。'; return }
-  const candidate = module.createReplayPlayer()
+  // 历史配置也可能被 Vue 代理；播放器只接收解包后的普通配置值。
+  const config = props.record.gameConfig
+  const rawConfig = typeof config === 'object' && config !== null ? toRaw(config) : config
+  const candidate = module.createReplayPlayer(rawConfig)
   if (!candidate) { unavailableMessage.value = '当前游戏暂不支持历史回放。'; return }
   player = candidate
   await nextTick()
@@ -160,7 +163,11 @@ function getReplayLegend(gameId: string, replayMode: ReplayMode): string[] {
     <section
       ref="fullscreenRoot"
       class="replay-panel"
-      :class="{ 'replay-panel--fullscreen': expanded }"
+      :class="{
+        'replay-panel--fullscreen': expanded,
+        'replay-panel--dynamic': mode === 'dynamic',
+        'replay-panel--trajectory': mode === 'trajectory',
+      }"
       :role="expanded ? 'dialog' : undefined"
       :aria-modal="expanded ? 'true' : undefined"
       :aria-label="expanded ? `${record.gameName}轨迹全屏回放` : undefined"
@@ -169,22 +176,22 @@ function getReplayLegend(gameId: string, replayMode: ReplayMode): string[] {
     >
       <template v-if="record.replay && !loadError && !unavailableMessage">
         <div class="replay-toolbar">
-          <strong v-if="expanded" class="replay-fullscreen-title">轨迹回放 · {{ record.gameName }}</strong>
+          <strong v-if="expanded" class="replay-fullscreen-title">{{ record.gameName }}</strong>
           <div class="replay-tabs">
-            <button class="button" :class="{ primary: mode === 'dynamic' }" @click="mode = 'dynamic'">动态回放</button>
-            <button class="button" :class="{ primary: mode === 'trajectory' }" @click="mode = 'trajectory'">完整轨迹</button>
+            <button class="button" :class="{ primary: mode === 'dynamic' }" @click="mode = 'dynamic'">{{ expanded ? '动态' : '动态回放' }}</button>
+            <button class="button" :class="{ primary: mode === 'trajectory' }" @click="mode = 'trajectory'">{{ expanded ? '轨迹' : '完整轨迹' }}</button>
           </div>
           <button v-if="ready" ref="expandButton" class="button replay-expand-button" @click="expanded ? exitFullscreen() : enterFullscreen()">
-            {{ expanded ? '退出全屏' : '展开全屏' }}
+            {{ expanded ? '退出' : '展开全屏' }}
           </button>
         </div>
         <div ref="host" class="replay-host"></div>
         <div v-if="ready && mode === 'dynamic'" class="replay-controls">
           <button class="button primary" @click="toggle">{{ snapshot.state === 'playing' ? '暂停' : '播放' }}</button>
-          <button class="button" @click="restart">重新开始</button>
-          <input type="range" min="0" :max="snapshot.durationMs" :value="snapshot.currentTimeMs" aria-label="回放进度" @input="seek">
-          <span>{{ format(snapshot.currentTimeMs) }} / {{ format(snapshot.durationMs) }}</span>
-          <div class="row"><button v-for="rate in [0.5, 1, 2]" :key="rate" class="button" :class="{ primary: snapshot.playbackRate === rate }" @click="setRate(rate)">{{ rate }}x</button></div>
+          <button class="button" @click="restart">{{ expanded ? '重置' : '重新开始' }}</button>
+          <input class="replay-timeline" type="range" min="0" :max="snapshot.durationMs" :value="snapshot.currentTimeMs" aria-label="回放进度" @input="seek">
+          <span class="replay-time">{{ format(snapshot.currentTimeMs) }} / {{ format(snapshot.durationMs) }}</span>
+          <div class="row replay-rate-buttons"><button v-for="rate in [0.5, 1, 2]" :key="rate" class="button" :class="{ primary: snapshot.playbackRate === rate }" @click="setRate(rate)">{{ rate }}x</button></div>
         </div>
         <p v-else-if="ready && !expanded" class="muted small">完整轨迹展示训练当时保存的二维运动事实，不重新执行游戏判定。</p>
         <div v-if="ready && expanded && legendItems.length" class="replay-legend" aria-label="轨迹图例"><span v-for="item in legendItems" :key="item">{{ item }}</span></div>

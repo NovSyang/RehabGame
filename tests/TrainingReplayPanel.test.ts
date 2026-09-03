@@ -73,6 +73,7 @@ describe('TrainingReplayPanel fullscreen', () => {
     expect(document.body.classList.contains('replay-fullscreen-open')).toBe(true)
     expect(document.body.textContent).toContain('00:30 / 01:30')
     expect(mocks.createReplayPlayer).toHaveBeenCalledOnce()
+    expect(mocks.createReplayPlayer).toHaveBeenCalledWith(expect.objectContaining({ targetRadiusNormalized: 0.12 }))
     expect(mocks.player.load).toHaveBeenCalledOnce()
     expect(mocks.lockLandscape).toHaveBeenCalledOnce()
 
@@ -91,12 +92,14 @@ describe('TrainingReplayPanel fullscreen', () => {
     await flushPromises()
     clickButton('展开全屏')
     await flushPromises()
-    clickButton('完整轨迹')
+    clickButton('轨迹')
     await flushPromises()
 
     expect(mocks.player.setMode).toHaveBeenLastCalledWith('trajectory')
     expect(mocks.createReplayPlayer).toHaveBeenCalledOnce()
     expect(mocks.player.load).toHaveBeenCalledOnce()
+    expect(document.querySelector('.replay-controls')).toBeNull()
+    expect(document.querySelector('.replay-legend')).not.toBeNull()
     expect(document.body.textContent).toContain('浅蓝线：完整移动轨迹')
     wrapper.unmount()
     await flushPromises()
@@ -141,7 +144,7 @@ function createRecord(id: string): TrainingRecord {
     completedAt: 1,
     result: { startedAt: 1, endedAt: 90_001, durationMs: 90_000 },
     motionProfile: createDefaultMotionProfile(1),
-    gameConfig: {},
+    gameConfig: { playerRadiusNormalized: 0.08, targetRadiusNormalized: 0.12 },
     replay: { schemaVersion: 1, durationMs: 90_000, sampleRateHz: 25, samples: [], events: [] },
   }
 }

@@ -12,7 +12,8 @@ describe('TargetReachReplayPlayer', () => {
       samples: [{ elapsedMs: 0, x: 0, y: 0 }, { elapsedMs: 40, x: 0.5, y: -0.5 }],
       events: [{ elapsedMs: 0, type: 'target-start', payload: { index: 1, targetX: 0.7, targetY: 0, ignored: () => undefined } }],
     })
-    const player = new TargetReachReplayPlayer()
+    // 历史配置同样可能是 Vue Proxy，构造播放器时只能读取基础数值。
+    const player = new TargetReachReplayPlayer(reactive({ playerRadiusNormalized: 0.09, targetRadiusNormalized: 0.13 }))
 
     expect(() => player.load(replay)).not.toThrow()
     expect(player.getSnapshot()).toMatchObject({ state: 'paused', durationMs: 1200, currentTimeMs: 0 })

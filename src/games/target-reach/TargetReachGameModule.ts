@@ -50,7 +50,7 @@ export const targetReachGameModule: GameModule<TargetReachTrainingResult, Target
 
   getConfigSnapshot: () => structuredClone(defaultTargetReachGameConfig),
   presentResult: presentTargetReachResult,
-  createReplayPlayer: () => new TargetReachReplayPlayer(),
+  createReplayPlayer: (config) => new TargetReachReplayPlayer(config),
 }
 
 /** Hash Router 的查询参数只在本次训练启用诊断，不进入配置和历史快照。 */

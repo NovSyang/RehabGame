@@ -305,14 +305,21 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .replay-controls input[type="range"] { flex: 1; accent-color: #4da3ff; }
 .replay-empty { display: grid; min-height: 260px; place-items: center; border: 1px dashed #34506f; border-radius: 14px; }
 body.replay-fullscreen-open { overflow: hidden; }
-/* 应用内全屏位于历史详情上方，但保留更新弹窗的最高优先级。 */
-.replay-panel--fullscreen { position: fixed; z-index: 60; inset: 0; width: 100vw; height: 100vh; height: 100dvh; padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); border: 0; background: #07101d; outline: none; }
-.replay-panel--fullscreen .replay-toolbar { min-height: 44px; flex: 0 0 auto; }
+/* 全屏回放让 Canvas 铺满视口，所有操作区只作为悬浮层覆盖在画面上。 */
+.replay-panel.replay-panel--fullscreen { position: fixed; z-index: 60; inset: 0; width: 100vw; height: 100vh; height: 100dvh; padding: 0; overflow: hidden; border: 0; background: #07101d; outline: none; }
+.replay-panel--fullscreen .replay-toolbar { position: absolute; z-index: 5; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); left: max(10px, env(safe-area-inset-left)); min-height: 44px; margin: 0; padding: 7px 9px; flex-wrap: nowrap; border: 1px solid rgba(91, 129, 171, 0.42); border-radius: 12px; background: rgba(7, 16, 29, 0.84); backdrop-filter: blur(8px); }
 .replay-fullscreen-title { color: #dcecff; white-space: nowrap; }
-.replay-panel--fullscreen .replay-host { width: 100%; min-width: 0; min-height: 0; border-radius: 10px; }
-.replay-panel--fullscreen .replay-controls { flex: 0 0 auto; }
+.replay-panel--fullscreen .replay-host { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; min-height: 0; border: 0; border-radius: 0; }
+.replay-panel--fullscreen .replay-controls { position: absolute; z-index: 5; right: max(10px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); left: max(10px, env(safe-area-inset-left)); display: grid; grid-template-columns: auto auto minmax(100px, 1fr) auto auto; align-items: center; gap: 8px; margin: 0; padding: 7px 9px; border: 1px solid rgba(91, 129, 171, 0.42); border-radius: 12px; background: rgba(7, 16, 29, 0.86); backdrop-filter: blur(8px); }
+.replay-panel--fullscreen .replay-timeline { min-width: 0; }
+.replay-time { white-space: nowrap; }
+.replay-rate-buttons { flex-wrap: nowrap; gap: 5px; }
+.replay-panel--fullscreen .replay-rate-buttons .button { min-width: 48px; padding-inline: 9px; }
 .replay-legend { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px 18px; padding-top: 9px; color: #9fb0c4; font-size: 12px; }
 .replay-legend span::before { content: '•'; margin-right: 6px; color: #8fd8ff; }
+.replay-panel--fullscreen .replay-legend { position: absolute; z-index: 5; left: max(10px, env(safe-area-inset-left)); width: max-content; max-width: calc(100vw - max(20px, env(safe-area-inset-left)) - max(20px, env(safe-area-inset-right))); margin: 0; padding: 7px 10px; border: 1px solid rgba(91, 129, 171, 0.32); border-radius: 10px; background: rgba(7, 16, 29, 0.78); backdrop-filter: blur(8px); }
+.replay-panel--fullscreen.replay-panel--dynamic .replay-legend { bottom: calc(max(8px, env(safe-area-inset-bottom)) + 60px); }
+.replay-panel--fullscreen.replay-panel--trajectory .replay-legend { bottom: max(8px, env(safe-area-inset-bottom)); }
 
 @media (max-width: 900px) {
   .shell { grid-template-columns: 1fr; }
@@ -429,9 +436,8 @@ body.replay-fullscreen-open { overflow: hidden; }
 
 /* 矮屏横屏时压缩工具栏和控制条，把主要空间留给 Pixi 画布。 */
 @media (max-height: 480px) and (orientation: landscape) {
-  .replay-panel--fullscreen { padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
-  .replay-panel--fullscreen .replay-toolbar { min-height: 40px; margin-bottom: 6px; }
+  .replay-panel--fullscreen .replay-toolbar { min-height: 40px; }
   .replay-panel--fullscreen .button { min-height: 38px; padding-block: 7px; }
-  .replay-panel--fullscreen .replay-controls { gap: 7px; padding-top: 6px; }
-  .replay-panel--fullscreen .replay-legend { padding-top: 5px; }
+  .replay-panel--fullscreen .replay-controls { gap: 7px; }
+  .replay-panel--fullscreen.replay-panel--dynamic .replay-legend { bottom: calc(max(8px, env(safe-area-inset-bottom)) + 56px); }
 }

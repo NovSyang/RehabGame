@@ -14,5 +14,6 @@ export interface GameModule<
   createGame(events: TrainingGameEvents<TResult>): ITrainingGame<TResult>
   getConfigSnapshot(): TConfig
   presentResult(result: TResult, config: TConfig): GameResultPresentation
-  createReplayPlayer(): ITrainingReplayPlayer | null
+  /** 回放可读取训练当时的配置；不需要配置的游戏可以忽略此参数。 */
+  createReplayPlayer(config?: TConfig): ITrainingReplayPlayer | null
 }

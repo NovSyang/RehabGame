@@ -4,6 +4,15 @@ import { downsampleForDisplay, sampleAtElapsed } from '../../../core/replay/Repl
 import { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
 import type { ReplayEvent, TrainingReplay } from '../../../core/replay/TrainingReplay'
 import { resizeReplayRendererToHost } from '../../../core/replay/ReplayPlayerResize'
+import {
+  toTargetReachScreenPoint,
+  type TargetReachViewportState,
+} from '../TargetReachViewportMapper'
+import {
+  createTargetReachReplayViewport,
+  resolveTargetReachReplayGeometryConfig,
+  type TargetReachReplayGeometryConfig,
+} from './TargetReachReplayGeometry'
 
 export type { ReplayMode, ReplayPlayerSnapshot, ReplayPlayerState } from '../../../core/replay/ITrainingReplayPlayer'
 export { copyTrainingReplay } from '../../../core/replay/TrainingReplayCopy'
@@ -35,6 +44,14 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   private resizeObserver: ResizeObserver | null = null
   private host: HTMLElement | null = null
   private resizeFrameId: number | null = null
+  private readonly geometryConfig: TargetReachReplayGeometryConfig
+  private viewport: TargetReachViewportState
+
+  constructor(config?: unknown) {
+    // 仅复制两个数字字段，避免历史配置中的 Proxy 或未知引用进入播放器。
+    this.geometryConfig = resolveTargetReachReplayGeometryConfig(config)
+    this.viewport = this.createViewport(0, 0)
+  }
 
   async mount(container: HTMLElement): Promise<void> {
     this.destroy()
@@ -47,6 +64,7 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     app.stage.addChild(this.pathGraphic, this.targetGraphic, this.playerGraphic, this.labels)
     this.app = app
     this.host = container
+    this.updateViewportGeometry()
     // 回放的完整轨迹是静态几何，Dialog 尺寸变化后需要重新映射坐标。
     this.resizeObserver = new ResizeObserver(() => this.scheduleResize())
     this.resizeObserver.observe(container)
@@ -60,6 +78,7 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     this.currentTimeMs = 0
     this.state = 'paused'
     this.lastTickAt = 0
+    this.updateViewportGeometry()
     this.render()
     this.publish()
   }
@@ -143,7 +162,12 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
     this.resizeFrameId = requestAnimationFrame(() => {
       this.resizeFrameId = null
-      if (this.app && this.host) resizeReplayRendererToHost(this.app, this.host, () => this.render())
+      if (this.app && this.host) {
+        resizeReplayRendererToHost(this.app, this.host, () => {
+          this.updateViewportGeometry()
+          this.render()
+        })
+      }
     })
   }
 
@@ -164,8 +188,8 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
     if (target) this.drawTarget(target)
     if (point) {
       this.drawPath(replay.samples.filter((sample) => sample.elapsedMs >= this.currentTargetStartedAt(this.currentTimeMs) && sample.elapsedMs <= this.currentTimeMs), 0x68d391, 3)
-      const screen = this.toScreen(point.x, point.y)
-      this.playerGraphic!.clear().circle(screen.x, screen.y, 14).fill(0x68d391)
+      const screen = toTargetReachScreenPoint(point, this.viewport)
+      this.playerGraphic!.clear().circle(screen.x, screen.y, this.viewport.playerRadiusPx).fill(0x68d391)
     } else this.playerGraphic!.clear()
   }
 
@@ -182,19 +206,19 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   private drawPath(samples: readonly { x: number; y: number }[], color: number, width: number): void {
     this.pathGraphic!.clear()
     if (samples.length < 2) return
-    const first = this.toScreen(samples[0].x, samples[0].y)
+    const first = toTargetReachScreenPoint(samples[0], this.viewport)
     this.pathGraphic!.moveTo(first.x, first.y)
     for (const sample of samples.slice(1)) {
-      const point = this.toScreen(sample.x, sample.y)
+      const point = toTargetReachScreenPoint(sample, this.viewport)
       this.pathGraphic!.lineTo(point.x, point.y)
     }
     this.pathGraphic!.stroke({ width, color, alpha: 0.82 })
   }
 
   private drawTarget(target: HistoricalTarget, withLabel = false): void {
-    const point = this.toScreen(target.x, target.y)
+    const point = toTargetReachScreenPoint(target, this.viewport)
     const color = target.outcome === 'success' ? 0x68d391 : target.outcome === 'failed' ? 0xfc8181 : 0x4da3ff
-    this.targetGraphic!.circle(point.x, point.y, 24).stroke({ width: 4, color, alpha: 1 })
+    this.targetGraphic!.circle(point.x, point.y, this.viewport.targetRadiusPx).stroke({ width: 4, color, alpha: 1 })
     if (withLabel) {
       const label = new Text({ text: String(target.index), style: { fill: '#ffffff', fontSize: 13, fontWeight: '700' } })
       label.anchor.set(0.5)
@@ -205,8 +229,18 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
 
   /** 中心点帮助查看者判断是否回到中立位置，不代表新的游戏事件。 */
   private drawCenter(): void {
-    const center = this.toScreen(0, 0)
+    const center = toTargetReachScreenPoint({ x: 0, y: 0 }, this.viewport)
     this.targetGraphic!.circle(center.x, center.y, 8).stroke({ width: 2, color: 0x91a3ba, alpha: 0.8 })
+  }
+
+  /** 画布尺寸变化后统一刷新映射，不能再分别计算横纵缩放。 */
+  private updateViewportGeometry(): void {
+    const screen = this.app?.screen
+    this.viewport = this.createViewport(screen?.width ?? 0, screen?.height ?? 0)
+  }
+
+  private createViewport(width: number, height: number): TargetReachViewportState {
+    return createTargetReachReplayViewport(width, height, this.geometryConfig)
   }
 
   private targetAt(elapsedMs: number): HistoricalTarget | null {
@@ -241,12 +275,6 @@ export class TargetReachReplayPlayer implements ITrainingReplayPlayer {
   }
 
   private sortedEvents(): ReplayEvent[] { return [...(this.replay?.events ?? [])].sort((a, b) => a.elapsedMs - b.elapsedMs) }
-
-  private toScreen(x: number, y: number): { x: number; y: number } {
-    const screen = this.app!.screen
-    const padding = 60
-    return { x: screen.width / 2 + x * Math.max(0, screen.width / 2 - padding), y: screen.height / 2 - y * Math.max(0, screen.height / 2 - padding) }
-  }
 
   private clearLabels(): void { this.labels.removeChildren().forEach((label) => label.destroy()) }
 

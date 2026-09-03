@@ -353,6 +353,17 @@
 - [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
 - [ ] Android 16:9、19.5:9、20:9、平板横屏及 Windows 窗口化完成 HUD、River 和 TargetReach 实机视觉回归
 
+### TargetReach 实时训练与历史回放 Geometry 一致性
+
+- [x] TargetReach 动态回放和完整轨迹删除独立 X/Y 缩放，统一复用实时游戏的 Viewport Mapper
+- [x] 玩家、当前目标、历史目标、中心点和轨迹统一使用标准化坐标及单一 `interactionScale`
+- [x] Replay 使用历史 `gameConfig` 的玩家/目标半径，旧记录缺失或损坏字段时逐项回退默认值
+- [x] 全屏回放改为全屏 Canvas 与 Toolbar、播放控制、图例 Overlay，完整轨迹模式隐藏播放控制
+- [x] 保持 TrainingRecord V2、Replay V1 和现有 IndexedDB 数据不变，旧历史无需迁移
+- [x] 54 个测试文件、228 项单元测试、`npm run build` 与 Android Debug APK 构建通过
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+- [ ] Windows / Android 对比实时训练、动态回放和完整轨迹的四方向距离、半径比例与路径形状
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导
