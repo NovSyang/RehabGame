@@ -11,6 +11,7 @@ import { createForestRiverLevel, type RiverLevelObject } from './RiverLevel'
 import type { RiverBoatSample, RiverReplayObject, RiverRunSnapshot } from './RiverReplayTypes'
 import { buildRiverTrainingResult, scoreForSuccess, type RiverTrainingResult } from './RiverTrainingResult'
 import { RiverAudioController } from './RiverAudioController'
+import { createRiverViewportLayout, type RiverViewportLayout } from './RiverViewportLayout'
 
 type Outcome = RiverReplayObject['outcome']
 interface RuntimeObject extends RiverLevelObject {
@@ -33,6 +34,9 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
   private readonly difficulty: RiverDifficultyManager
   private audio = new RiverAudioController()
   private app: Application | null = null
+  private environmentGraphic: Graphics | null = null
+  private environmentDecor: Container | null = null
+  private environmentFoliage: Sprite[] = []
   private scene: Container | null = null
   private worldLayer: Container | null = null
   private decorLayer: Container | null = null
@@ -42,6 +46,7 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
   private countdownText: Text | null = null
   private missionText: Text | null = null
   private resizeObserver: ResizeObserver | null = null
+  private resizeFrameId: number | null = null
   private latestInput = emptyInput()
   private objects: RuntimeObject[] = []
   private boatX = 0
@@ -84,7 +89,7 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
     this.app = app
     this.buildScene()
     await this.loadArt()
-    this.resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.layoutScene()))
+    this.resizeObserver = new ResizeObserver(() => this.scheduleLayout())
     this.resizeObserver.observe(container)
     app.ticker.add(() => {
       const now = performance.now()
@@ -138,9 +143,14 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
   destroy(): void {
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = null
     this.audio.destroy()
     this.app?.destroy(true, { children: true })
     this.app = null
+    this.environmentGraphic = null
+    this.environmentDecor = null
+    this.environmentFoliage = []
     this.scene = null
     this.worldLayer = null
     this.decorLayer = null
@@ -363,6 +373,10 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
 
   private buildScene(): void {
     if (!this.app) return
+    const fullscreenEnvironment = new Container()
+    const environmentGraphic = new Graphics()
+    const environmentDecor = new Container()
+    fullscreenEnvironment.addChild(environmentGraphic, environmentDecor)
     const scene = new Container()
     const background = new Graphics().rect(0, 0, 1280, 720).fill(0x173f3c)
     const bank = new Graphics().roundRect(150, -40, 980, 800, 180).fill(0x5b8d5a)
@@ -383,7 +397,9 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
     countdownText.anchor.set(0.5)
     missionText.anchor.set(0.5)
     scene.addChild(background, bank, river, waterLines, waterParticles, decorLayer, worldLayer, boat, missionText, countdownText)
-    this.app.stage.addChild(scene)
+    this.app.stage.addChild(fullscreenEnvironment, scene)
+    this.environmentGraphic = environmentGraphic
+    this.environmentDecor = environmentDecor
     this.scene = scene
     this.worldLayer = worldLayer
     this.decorLayer = decorLayer
@@ -401,14 +417,16 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
       const paths = ['boat', 'star', 'rock', 'log', 'foliage'] as const
       const loaded = await Promise.all(paths.map(async (name) => [name, await Assets.load<Texture>(`/assets/games/river/${name}.png`)] as const))
       for (const [name, texture] of loaded) this.textures.set(name, texture)
-      const texture = this.textures.get('boat')!
-      const sprite = new Sprite(texture)
+      const boatTexture = this.textures.get('boat')!
+      const sprite = new Sprite(boatTexture)
       sprite.anchor.set(0.5)
       sprite.width = 110
       sprite.height = 110
       this.boat.removeChildren().forEach((child) => child.destroy())
       this.boat.addChild(sprite)
       this.decorateBanks()
+      this.createEnvironmentFoliage(this.textures.get('foliage')!)
+      this.layoutScene()
     } catch { /* 正式素材缺失时保留清晰的小船降级图形。 */ }
   }
 
@@ -465,6 +483,20 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
     }
   }
 
+  /** 全屏环境固定复用 12 个植被精灵，Resize 时只改变位置与尺寸。 */
+  private createEnvironmentFoliage(texture: Texture): void {
+    if (!this.environmentDecor) return
+    this.environmentDecor.removeChildren().forEach((child) => child.destroy())
+    this.environmentFoliage = []
+    for (let index = 0; index < 12; index += 1) {
+      const sprite = new Sprite(texture)
+      sprite.anchor.set(0.5)
+      sprite.alpha = 0.82
+      this.environmentDecor.addChild(sprite)
+      this.environmentFoliage.push(sprite)
+    }
+  }
+
   private render(now: number): void {
     if (!this.scene || !this.boat || !this.countdownText || !this.missionText) return
     const snapshot = this.session.getSnapshot(now)
@@ -488,15 +520,67 @@ export class RiverGame implements ITrainingGame<RiverTrainingResult> {
     this.countdownText.text = String(Math.max(1, Math.ceil(countdown / 1_000)))
     this.countdownText.position.set(640, 330)
     const segment = [...this.level.segments].reverse().find((item) => this.progress >= item.start)
-    this.missionText.text = `${segment?.title ?? '森林溪谷'} · ${Math.round(this.progress / this.config.levelLength * 100)}%`
+    // 进度由 Vue HUD 统一显示，场景内只保留当前训练阶段。
+    this.missionText.text = segment?.title ?? '森林溪谷'
     this.missionText.position.set(640, 45)
   }
 
   private layoutScene(): void {
     if (!this.app || !this.scene) return
-    const scale = Math.min(this.app.screen.width / this.config.logicalWidth, this.app.screen.height / this.config.logicalHeight)
-    this.scene.scale.set(scale)
-    this.scene.position.set((this.app.screen.width - this.config.logicalWidth * scale) / 2, (this.app.screen.height - this.config.logicalHeight * scale) / 2)
+    const layout = createRiverViewportLayout(
+      this.app.screen.width,
+      this.app.screen.height,
+      this.config.logicalWidth,
+      this.config.logicalHeight,
+    )
+    this.scene.scale.set(layout.gameplayScale)
+    this.scene.position.set(layout.gameplayX, layout.gameplayY)
+    this.drawFullscreenEnvironment(layout)
+    this.layoutEnvironmentFoliage(layout)
+  }
+
+  private scheduleLayout(): void {
+    if (this.resizeFrameId !== null) cancelAnimationFrame(this.resizeFrameId)
+    this.resizeFrameId = requestAnimationFrame(() => {
+      this.resizeFrameId = null
+      this.layoutScene()
+    })
+  }
+
+  /** 森林底色和延伸河岸覆盖整个画布，16:9 游戏场景仍保持原比例。 */
+  private drawFullscreenEnvironment(layout: RiverViewportLayout): void {
+    const graphic = this.environmentGraphic
+    if (!graphic) return
+    graphic.clear()
+      .rect(0, 0, layout.screenWidth, layout.screenHeight)
+      .fill({ color: 0x173f3c, alpha: 1 })
+
+    if (layout.leftFillWidth > 0) {
+      graphic.rect(0, 0, layout.leftFillWidth + 2, layout.screenHeight).fill({ color: 0x315f45, alpha: 0.86 })
+    }
+    if (layout.rightFillWidth > 0) {
+      graphic.rect(layout.gameplayX + layout.gameplayWidth - 2, 0, layout.rightFillWidth + 2, layout.screenHeight)
+        .fill({ color: 0x315f45, alpha: 0.86 })
+    }
+  }
+
+  private layoutEnvironmentFoliage(layout: RiverViewportLayout): void {
+    for (let index = 0; index < this.environmentFoliage.length; index += 1) {
+      const sprite = this.environmentFoliage[index]
+      const leftSide = index < 6
+      const sideIndex = index % 6
+      const fillWidth = leftSide ? layout.leftFillWidth : layout.rightFillWidth
+      sprite.visible = fillWidth >= 36 && layout.screenHeight > 0
+      if (!sprite.visible) continue
+      const size = Math.max(70, Math.min(180, fillWidth * 0.9))
+      sprite.width = size
+      sprite.height = size
+      sprite.scale.x = Math.abs(sprite.scale.x) * (leftSide ? 1 : -1)
+      sprite.position.set(
+        leftSide ? fillWidth * (0.28 + (sideIndex % 2) * 0.32) : layout.screenWidth - fillWidth * (0.28 + (sideIndex % 2) * 0.32),
+        layout.screenHeight * (0.1 + sideIndex * 0.16),
+      )
+    }
   }
 
   private publishHud(): void {

@@ -341,6 +341,18 @@
 - [ ] Android 真机完成沉浸式系统栏、前后台恢复、边缘手势和多宽高比 TargetReach 判定验收
 - [ ] Windows 实机回归 TargetReach、暂停/断线恢复、历史保存和 Replay
 
+### 移动端全屏游戏化 HUD 与画面比例
+
+- [x] Android Playing 状态改为全屏 Pixi Canvas 与 Vue HUD Overlay，Safe Area 只约束 HUD 和引导层
+- [x] 新增紧凑指标 Pill、44px 暂停/结束按钮和 Compact DeviceConnectionStatus
+- [x] River 保持 1280×720 等比 Gameplay Scene，并使用固定森林环境层填充超宽屏剩余区域
+- [x] River 场景内只显示当前阶段，训练进度统一由外部 HUD 展示
+- [x] TargetReach 改为 X/Y 等比 Interaction Space，玩家、目标、Hold 光圈和诊断边界均保持圆形
+- [x] TargetReach 标准化 Circle-vs-Circle、Hold、结果和 Replay 事实保持不变
+- [x] 53 个测试文件、217 项单元测试、`npm run build` 与 Android Debug APK 构建通过
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+- [ ] Android 16:9、19.5:9、20:9、平板横屏及 Windows 窗口化完成 HUD、River 和 TargetReach 实机视觉回归
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导

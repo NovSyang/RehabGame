@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import CenterCalibrationGuide from '../components/calibration/CenterCalibrationGuide.vue'
 import DeviceConnectionStatus from '../components/app/DeviceConnectionStatus.vue'
+import TrainingHud from '../components/training/TrainingHud.vue'
 import { appLifecycleService, connectionManager, displayService, gameTutorialRepository, persistTrainingResult, sensorService, updateInstallGuard } from '../app/AppServices'
 import type { GameHudSnapshot } from '../core/game/TrainingGameEvents'
 import type { ITrainingGame } from '../core/game/ITrainingGame'
@@ -234,12 +235,21 @@ function formatError(error: unknown): string { return error instanceof Error ? e
 
 <template>
   <main class="training-shell">
-    <header class="training-toolbar">
+    <header v-if="!androidNative || preflight !== 'playing'" class="training-toolbar">
       <div><p class="eyebrow">{{ module?.definition.name ?? '训练' }}</p><h1>{{ preflight !== 'playing' ? '训练准备' : hud.title }}</h1><p v-if="hud.subtitle" class="muted small">{{ hud.subtitle }}</p></div>
       <div class="scoreboard"><span v-for="metric in hud.metrics" :key="metric.label">{{ metric.label }} {{ metric.value }}</span><span>{{ trainingState }}</span></div>
       <div class="row training-actions"><DeviceConnectionStatus v-if="androidNative" /><button class="button" :disabled="!canPause" @click="togglePause">{{ trainingState === 'paused' ? '继续' : '暂停' }}</button><button class="button danger" @click="requestAbort">结束训练</button></div>
     </header>
     <div ref="gameHost" class="game-host training-host"></div>
+    <!-- Android 正式训练使用悬浮 HUD，避免工具栏继续压缩 Pixi 画布。 -->
+    <TrainingHud
+      v-if="androidNative && preflight === 'playing'"
+      :hud="hud"
+      :training-state="trainingState"
+      :can-pause="canPause"
+      @pause="togglePause"
+      @abort="requestAbort"
+    />
     <div v-if="preflight !== 'playing'" class="training-overlay">
       <CenterCalibrationGuide v-if="preflight === 'center-guide' || (preflight === 'recalibrating' && connected)" @completed="centerCompleted" />
       <section v-else-if="preflight === 'tutorial'" class="center-guide tutorial-guide"><p class="eyebrow">交互引导 {{ (tutorialSnapshot?.stepIndex ?? 0) + 1 }} / {{ module?.definition.tutorial?.steps.length ?? 0 }}</p><h2>{{ tutorialSnapshot?.step?.title }}</h2><p>{{ tutorialSnapshot?.step?.description }}</p><div class="calibration-progress"><span :style="{ width: `${(tutorialSnapshot?.holdProgress ?? 0) * 100}%` }"></span></div><p class="muted small">达到提示方向并连续保持 400 毫秒。</p></section>

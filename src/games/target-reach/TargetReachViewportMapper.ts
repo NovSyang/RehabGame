@@ -5,54 +5,66 @@ export interface ScreenPoint {
   y: number
 }
 
-/** 集中保存标准化训练空间映射到当前 Pixi 画布所需的尺寸。 */
+export interface TargetReachViewportInsets {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
+/** 顶部为移动 HUD 留出空间，其他边缘只保留基础视觉间距。 */
+export const defaultTargetReachViewportInsets: Readonly<TargetReachViewportInsets> = {
+  top: 60,
+  right: 24,
+  bottom: 24,
+  left: 24,
+}
+
+/** 标准化 X/Y 共用同一比例，圆形交互元素不会随屏幕宽高比变形。 */
 export interface TargetReachViewportState {
   width: number
   height: number
   centerX: number
   centerY: number
-  rangeX: number
-  rangeY: number
-  playerRadiusX: number
-  playerRadiusY: number
-  targetRadiusX: number
-  targetRadiusY: number
+  interactionScale: number
+  playerRadiusPx: number
+  targetRadiusPx: number
 }
 
-/** X/Y 独立缩放能充分使用横屏空间，标准化圆会对应为屏幕椭圆。 */
 export function createTargetReachViewport(
   width: number,
   height: number,
   playerRadiusNormalized: number,
   targetRadiusNormalized: number,
-  padding = 70,
+  insets: TargetReachViewportInsets = defaultTargetReachViewportInsets,
 ): TargetReachViewportState {
   const safeWidth = finiteNonNegative(width)
   const safeHeight = finiteNonNegative(height)
-  const safePadding = finiteNonNegative(padding)
+  const top = finiteNonNegative(insets.top)
+  const right = finiteNonNegative(insets.right)
+  const bottom = finiteNonNegative(insets.bottom)
+  const left = finiteNonNegative(insets.left)
+  const availableWidth = Math.max(0, safeWidth - left - right)
+  const availableHeight = Math.max(0, safeHeight - top - bottom)
+  const interactionScale = Math.min(availableWidth / 2, availableHeight / 2)
   const playerRadius = finiteNonNegative(playerRadiusNormalized)
   const targetRadius = finiteNonNegative(targetRadiusNormalized)
-  const rangeX = Math.max(0, safeWidth / 2 - safePadding)
-  const rangeY = Math.max(0, safeHeight / 2 - safePadding)
   return {
     width: safeWidth,
     height: safeHeight,
-    centerX: safeWidth / 2,
-    centerY: safeHeight / 2,
-    rangeX,
-    rangeY,
-    playerRadiusX: playerRadius * rangeX,
-    playerRadiusY: playerRadius * rangeY,
-    targetRadiusX: targetRadius * rangeX,
-    targetRadiusY: targetRadius * rangeY,
+    centerX: availableWidth > 0 ? left + availableWidth / 2 : safeWidth / 2,
+    centerY: availableHeight > 0 ? top + availableHeight / 2 : safeHeight / 2,
+    interactionScale,
+    playerRadiusPx: playerRadius * interactionScale,
+    targetRadiusPx: targetRadius * interactionScale,
   }
 }
 
 /** Y 轴向上为正，因此映射到屏幕时需要反向。 */
 export function toTargetReachScreenPoint(point: NormalizedPoint, viewport: TargetReachViewportState): ScreenPoint {
   return {
-    x: viewport.centerX + point.x * viewport.rangeX,
-    y: viewport.centerY - point.y * viewport.rangeY,
+    x: viewport.centerX + point.x * viewport.interactionScale,
+    y: viewport.centerY - point.y * viewport.interactionScale,
   }
 }
 

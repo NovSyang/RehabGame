@@ -29,6 +29,8 @@ button, select { font: inherit; }
 .device-status-menu { position: relative; margin-left: auto; }
 .device-status { display: flex; align-items: center; gap: 7px; border: 0; padding: 7px 9px; border-radius: 8px; background: transparent; color: #fc8181; font-size: 13px; cursor: pointer; }
 .device-status:hover { background: #13243a; }
+.device-status--compact { min-width: 44px; min-height: 44px; justify-content: center; padding: 6px 8px; background: rgba(7, 16, 29, .72); backdrop-filter: blur(6px); }
+.device-status--compact .battery-status { margin-left: 0; }
 .status-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
 .device-status[data-connected="true"] { color: #68d391; }
 .battery-status { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; color: #b8c6d8; }
@@ -224,6 +226,16 @@ h1 { margin: 6px 0 4px; font-size: 26px; }
 .training-host { min-height: calc(100vh - 160px); }
 .scoreboard { display: flex; gap: 14px; color: #b9d6ff; font-weight: 700; }
 .training-shell { position: relative; }
+.training-hud { position: absolute; z-index: 10; top: max(6px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); left: max(8px, env(safe-area-inset-left)); min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; pointer-events: none; }
+.training-hud-metrics, .training-hud-actions { min-width: 0; display: flex; align-items: center; gap: 7px; pointer-events: auto; }
+.training-hud-metrics { flex-wrap: wrap; }
+.training-hud-actions { flex: 0 0 auto; }
+.training-hud-metric { min-height: 36px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid rgba(62, 94, 128, .62); border-radius: 999px; background: rgba(7, 16, 29, .72); color: #dcecff; box-shadow: 0 6px 18px rgba(0, 0, 0, .16); backdrop-filter: blur(6px); white-space: nowrap; }
+.training-hud-metric small { color: #91a3ba; font-size: 12px; }
+.training-hud-metric strong { color: #b9d6ff; font-size: 14px; }
+.training-hud-button { min-height: 44px; padding: 7px 13px; border: 1px solid rgba(67, 104, 143, .88); border-radius: 10px; background: rgba(20, 50, 78, .84); color: #edf2f7; font-size: 14px; cursor: pointer; backdrop-filter: blur(6px); white-space: nowrap; }
+.training-hud-button:disabled { opacity: .45; cursor: default; }
+.training-hud-button--danger { border-color: rgba(142, 74, 91, .9); background: rgba(90, 38, 50, .84); }
 .training-display-hint { position: absolute; z-index: 5; right: 20px; bottom: max(14px, env(safe-area-inset-bottom)); margin: 0; padding: 8px 12px; border: 1px solid #6f6034; border-radius: 9px; background: rgba(48, 42, 24, .92); color: #f0d58a; font-size: 12px; }
 .training-overlay { position: absolute; z-index: 3; inset: 120px 10% 40px; display: grid; place-items: center; background: rgba(4, 13, 24, .68); border-radius: 20px; }
 .center-guide { width: min(520px, 90%); padding: 26px; border: 1px solid #34506f; border-radius: 18px; background: #0f1b2c; box-shadow: 0 20px 60px rgba(0,0,0,.38); }
@@ -371,29 +383,35 @@ body.replay-fullscreen-open { overflow: hidden; }
   .update-version-row, .update-policy-field { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
 
-/* Android Training：占满动态视口，Toolbar 紧凑，Canvas 使用剩余空间。 */
+/* Android Training：Canvas 铺满动态视口，HUD 和引导层悬浮在游戏之上。 */
 .native-training-route.training-shell {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
   height: 100dvh;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  /* 沉浸式训练保留异形屏安全区，同时尽量把空间留给游戏画面。 */
-  padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  padding: 0;
   overflow: hidden;
+  background: #07101d;
 }
-.native-training-route .training-toolbar { min-height: 52px; flex: 0 0 auto; margin-bottom: 8px; gap: 12px; }
+.native-training-route .training-toolbar { position: absolute; z-index: 25; top: max(6px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); left: max(8px, env(safe-area-inset-left)); min-height: 52px; align-items: center; flex-direction: row; margin-bottom: 0; gap: 12px; pointer-events: none; }
 .native-training-route .training-toolbar .eyebrow, .native-training-route .training-toolbar .muted { display: none; }
 .native-training-route .training-toolbar h1 { margin: 0; font-size: 19px; }
-.native-training-route .scoreboard { flex-wrap: wrap; justify-content: center; gap: 6px 12px; font-size: 13px; }
-.native-training-route .training-actions { flex-wrap: nowrap; margin-top: 0; }
+.native-training-route .scoreboard { display: none; }
+.native-training-route .training-actions { flex-wrap: nowrap; margin: 0 0 0 auto; pointer-events: auto; }
 .native-training-route .training-actions .button { min-height: 44px; white-space: nowrap; }
-.native-training-route .training-host { flex: 1 1 auto; min-height: 0; border-radius: 14px; }
-.native-training-route .training-overlay { inset: 68px 8px max(6px, env(safe-area-inset-bottom)); overflow: auto; border-radius: 14px; }
+.native-training-route .training-host { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+.native-training-route .training-overlay { z-index: 20; inset: 0; overflow: auto; padding: max(66px, calc(env(safe-area-inset-top) + 60px)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-radius: 0; }
 .native-training-route .center-guide { max-height: calc(100dvh - 96px); overflow-y: auto; padding: 18px; }
+.native-training-route .training-display-hint { z-index: 30; }
+.native-training-route > .error { position: absolute; z-index: 30; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); margin: 0; padding: 9px 12px; border-radius: 9px; background: rgba(71, 38, 51, .94); }
 
 @media (max-width: 700px) and (orientation: landscape) {
+  .training-hud { gap: 6px; }
+  .training-hud-metrics, .training-hud-actions { gap: 5px; }
+  .training-hud-metric { padding-inline: 7px; }
+  .training-hud-button { padding-inline: 10px; }
   .native-training-route .training-toolbar > div:first-child { max-width: 150px; }
-  .native-training-route .scoreboard span:nth-last-child(1) { display: none; }
 }
 
 /* Small Phone：减少次要间距，指标改为单列，避免窄屏文字挤压。 */

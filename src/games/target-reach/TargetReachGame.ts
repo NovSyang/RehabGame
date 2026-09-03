@@ -13,6 +13,7 @@ import { circlesIntersect } from './TargetReachGeometry'
 import { distanceBetween, getTargetPosition, type NormalizedPoint } from './TargetReachMath'
 import {
   createTargetReachViewport,
+  defaultTargetReachViewportInsets,
   toTargetReachScreenPoint,
   type TargetReachViewportState,
 } from './TargetReachViewportMapper'
@@ -28,7 +29,6 @@ export interface TargetReachGameOptions {
   geometryDebug?: boolean
 }
 
-const VIEWPORT_PADDING = 70
 const SUCCESS_PULSE_MS = 260
 
 /** 使用归一化 GameInput 完成四方向目标触达训练的 PixiJS 游戏。 */
@@ -75,7 +75,7 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
       0,
       this.config.playerRadiusNormalized,
       this.config.targetRadiusNormalized,
-      VIEWPORT_PADDING,
+      defaultTargetReachViewportInsets,
     )
   }
 
@@ -373,7 +373,11 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
       const targetPoint = toTargetReachScreenPoint(point, this.viewport)
       this.setTargetPosition(targetPoint.x, targetPoint.y)
       directionText.text = directionLabel(this.currentDirection)
-      directionText.position.set(this.viewport.centerX, 40)
+      // 文案位于 HUD 下方和前向目标上方，不占用训练交互空间中心。
+      directionText.position.set(
+        this.viewport.centerX,
+        Math.max(defaultTargetReachViewportInsets.top, this.viewport.centerY - this.viewport.interactionScale * 0.92),
+      )
       directionText.visible = snapshot.state === 'playing'
     } else directionText.visible = false
 
@@ -397,22 +401,22 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
       this.app.screen.height,
       this.config.playerRadiusNormalized,
       this.config.targetRadiusNormalized,
-      VIEWPORT_PADDING,
+      defaultTargetReachViewportInsets,
     )
     if (!force && next.width === this.viewport.width && next.height === this.viewport.height) return
     this.viewport = next
-    this.player.clear().ellipse(0, 0, next.playerRadiusX, next.playerRadiusY).fill(0x68d391)
+    this.player.clear().circle(0, 0, next.playerRadiusPx).fill(0x68d391)
     this.targetOutside.clear()
-      .ellipse(0, 0, next.targetRadiusX, next.targetRadiusY)
+      .circle(0, 0, next.targetRadiusPx)
       .fill({ color: 0x4da3ff, alpha: 0.1 })
       // 描边向内绘制，患者看到的最外边界仍是业务圆的真实边界。
       .stroke({ width: 4, color: 0x4da3ff, alpha: 1, alignment: 1 })
     this.targetHolding.clear()
-      .ellipse(0, 0, next.targetRadiusX, next.targetRadiusY)
+      .circle(0, 0, next.targetRadiusPx)
       .fill({ color: 0x68d391, alpha: 0.16 })
       .stroke({ width: 5, color: 0x7ee8b0, alpha: 1, alignment: 1 })
     this.successPulse.clear()
-      .ellipse(0, 0, next.targetRadiusX + 7, next.targetRadiusY + 7)
+      .circle(0, 0, next.targetRadiusPx + 7)
       .stroke({ width: 5, color: 0x68d391, alpha: 1 })
     this.renderedHoldProgress = -1
     this.drawHoldProgress(this.holdProgress)
@@ -450,13 +454,13 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
     const safeProgress = Math.max(0, Math.min(1, progress))
     this.renderedHoldProgress = safeProgress
     graphic.clear()
-    if (safeProgress <= 0 || this.viewport.targetRadiusX <= 0 || this.viewport.targetRadiusY <= 0) return
-    // Pixi 没有椭圆弧 API，使用少量线段绘制连续 Hold 光圈。
+    if (safeProgress <= 0 || this.viewport.targetRadiusPx <= 0) return
+    // 使用少量线段绘制连续 Hold 光圈，避免每帧创建新的 Pixi 对象。
     const segmentCount = Math.max(2, Math.ceil(64 * safeProgress))
     for (let index = 0; index <= segmentCount; index += 1) {
       const angle = -Math.PI / 2 + Math.PI * 2 * safeProgress * (index / segmentCount)
-      const x = Math.cos(angle) * (this.viewport.targetRadiusX + 7)
-      const y = Math.sin(angle) * (this.viewport.targetRadiusY + 7)
+      const x = Math.cos(angle) * (this.viewport.targetRadiusPx + 7)
+      const y = Math.sin(angle) * (this.viewport.targetRadiusPx + 7)
       if (index === 0) graphic.moveTo(x, y)
       else graphic.lineTo(x, y)
     }
@@ -503,19 +507,19 @@ export class TargetReachGame implements ITrainingGame<TargetReachTrainingResult>
     const heldMs = this.targetHoldStartedElapsedMs === null ? 0 : Math.max(0, sessionElapsed - this.targetHoldStartedElapsedMs)
 
     const graphic = this.debugGraphic.clear().roundRect(8, 8, 274, 174, 8).fill({ color: 0x040d18, alpha: 0.82 })
-    graphic.ellipse(playerScreen.x, playerScreen.y, this.viewport.playerRadiusX, this.viewport.playerRadiusY)
+    graphic.circle(playerScreen.x, playerScreen.y, this.viewport.playerRadiusPx)
       .stroke({ width: 1, color: 0xffd166, alpha: 0.9 })
     graphic.circle(playerScreen.x, playerScreen.y, 2).fill(0xffd166)
     if (targetScreen) {
       graphic.moveTo(playerScreen.x, playerScreen.y).lineTo(targetScreen.x, targetScreen.y)
         .stroke({ width: 1, color: 0xffd166, alpha: 0.7 })
-      graphic.ellipse(targetScreen.x, targetScreen.y, this.viewport.targetRadiusX, this.viewport.targetRadiusY)
+      graphic.circle(targetScreen.x, targetScreen.y, this.viewport.targetRadiusPx)
         .stroke({ width: 1, color: 0xffd166, alpha: 0.9 })
       graphic.circle(targetScreen.x, targetScreen.y, 2).fill(0xffd166)
     }
     this.debugText.text = [
       `Canvas: ${this.viewport.width.toFixed(0)} x ${this.viewport.height.toFixed(0)}`,
-      `Range: X ${this.viewport.rangeX.toFixed(0)} / Y ${this.viewport.rangeY.toFixed(0)}`,
+      `Interaction Scale: ${this.viewport.interactionScale.toFixed(0)}`,
       `Input: ${playerNormalized.x.toFixed(3)}, ${playerNormalized.y.toFixed(3)}`,
       `Target: ${targetNormalized ? `${targetNormalized.x.toFixed(3)}, ${targetNormalized.y.toFixed(3)}` : '--'}`,
       `Distance: ${distance === null ? '--' : distance.toFixed(3)}`,

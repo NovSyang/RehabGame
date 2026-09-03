@@ -1,36 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { createTargetReachViewport, toTargetReachScreenPoint } from '../src/games/target-reach/TargetReachViewportMapper'
+import {
+  createTargetReachViewport,
+  defaultTargetReachViewportInsets,
+  toTargetReachScreenPoint,
+} from '../src/games/target-reach/TargetReachViewportMapper'
 
 describe('TargetReachViewportMapper', () => {
   it.each([
-    ['16:9', 1600, 900],
-    ['20:9', 2000, 900],
-    ['4:3', 1200, 900],
-    ['超宽横屏', 2400, 600],
-    ['矮屏横屏', 1280, 360],
-  ])('%s 画布生成稳定的标准化映射', (_name, width, height) => {
+    ['16:9', 1280, 720],
+    ['20:9', 2400, 1080],
+    ['Full HD', 1920, 1080],
+    ['4:3', 1024, 768],
+    ['矮屏横屏', 800, 360],
+  ])('%s 画布使用统一的 X/Y 交互比例', (_name, width, height) => {
     const viewport = createTargetReachViewport(width, height, 0.08, 0.12)
     const point = toTargetReachScreenPoint({ x: 0.7, y: -0.5 }, viewport)
     expect(viewport.centerX).toBe(width / 2)
-    expect(viewport.centerY).toBe(height / 2)
     expect(point).toEqual({
-      x: width / 2 + viewport.rangeX * 0.7,
-      y: height / 2 + viewport.rangeY * 0.5,
+      x: viewport.centerX + viewport.interactionScale * 0.7,
+      y: viewport.centerY + viewport.interactionScale * 0.5,
     })
-    expect(viewport.playerRadiusX).toBeCloseTo(viewport.rangeX * 0.08)
-    expect(viewport.targetRadiusY).toBeCloseTo(viewport.rangeY * 0.12)
+    expect(viewport.playerRadiusPx).toBeCloseTo(viewport.interactionScale * 0.08)
+    expect(viewport.targetRadiusPx).toBeCloseTo(viewport.interactionScale * 0.12)
+    expect(viewport.centerY - viewport.interactionScale).toBeGreaterThanOrEqual(defaultTargetReachViewportInsets.top)
   })
 
-  it('纵向边缘接触在屏幕映射后仍与两个椭圆半径之和一致', () => {
-    const viewport = createTargetReachViewport(2000, 700, 0.08, 0.12)
-    const player = toTargetReachScreenPoint({ x: 0, y: 0.5 }, viewport)
-    const target = toTargetReachScreenPoint({ x: 0, y: 0.7 }, viewport)
-    expect(Math.abs(player.y - target.y)).toBeCloseTo(viewport.playerRadiusY + viewport.targetRadiusY)
+  it('横向和纵向的相同标准化距离映射为相同像素距离', () => {
+    const viewport = createTargetReachViewport(2400, 1080, 0.08, 0.12)
+    const center = toTargetReachScreenPoint({ x: 0, y: 0 }, viewport)
+    const horizontal = toTargetReachScreenPoint({ x: 0.2, y: 0 }, viewport)
+    const vertical = toTargetReachScreenPoint({ x: 0, y: 0.2 }, viewport)
+    expect(Math.abs(horizontal.x - center.x)).toBeCloseTo(Math.abs(vertical.y - center.y))
+    expect(Math.abs(vertical.y - center.y)).toBeCloseTo(viewport.playerRadiusPx + viewport.targetRadiusPx)
   })
 
-  it('零尺寸和非法尺寸不会生成负数范围', () => {
+  it('零尺寸和非法尺寸不会生成负数范围或半径', () => {
     const viewport = createTargetReachViewport(Number.NaN, -1, 0.08, 0.12)
-    expect(viewport.rangeX).toBe(0)
-    expect(viewport.rangeY).toBe(0)
+    expect(viewport.interactionScale).toBe(0)
+    expect(viewport.playerRadiusPx).toBe(0)
+    expect(viewport.targetRadiusPx).toBe(0)
   })
 })
