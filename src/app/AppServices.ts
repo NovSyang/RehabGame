@@ -2,6 +2,11 @@ import { ref } from 'vue'
 import { LocalStorageMotionProfileRepository } from '../core/motion/LocalStorageMotionProfileRepository'
 import { MotionProfileService } from '../core/motion/MotionProfileService'
 import type { MotionProfile } from '../core/motion/MotionProfile'
+import type { MotionRange } from '../core/motion/MotionConfig'
+import { ActivityRangeHistoryService } from '../core/motion/history/ActivityRangeHistoryService'
+import type { ActivityRangeHistorySource } from '../core/motion/history/ActivityRangeHistoryRecord'
+import { LocalStorageActivityRangeHistoryRepository } from '../core/motion/history/LocalStorageActivityRangeHistoryRepository'
+import { saveActivityRangeMeasurement } from '../core/motion/history/PersistActivityRangeMeasurement'
 import { LocalStorageDeviceBindingRepository } from '../core/sensor/DeviceBinding'
 import { SensorConnectionManager } from '../core/sensor/SensorConnectionManager'
 import { SensorService } from '../core/sensor/SensorService'
@@ -34,6 +39,11 @@ export const gameTutorialRepository = new GameTutorialRepository(localStore)
 export const connectionManager = new SensorConnectionManager(sensorService, new LocalStorageDeviceBindingRepository(localStore))
 export const motionProfileService = new MotionProfileService(new LocalStorageMotionProfileRepository(localStore), sensorService)
 export const trainingRepository = new IndexedDbTrainingRepository()
+export const activityRangeHistoryService = new ActivityRangeHistoryService(
+  new LocalStorageActivityRangeHistoryRepository(localStore),
+  trainingRepository,
+  () => motionProfileService.getCurrent(),
+)
 export const updateInstallGuard = new UpdateInstallGuard()
 export const updateService = new AppUpdateService(
   createUpdateProvider(),
@@ -50,11 +60,21 @@ let initialized: Promise<void> | null = null
 export function initializeAppServices(): Promise<void> {
   initialized ??= (async () => {
     await motionProfileService.load()
+    // 旧历史恢复在后台运行，失败不会阻塞首页、设备连接或训练。
+    void activityRangeHistoryService.recoverLegacyIfNeeded().catch(() => undefined)
     await connectionManager.initialize()
     // 自动连接不能阻塞历史、设置或回放页面的首次渲染。
     void connectionManager.startupConnect()
   })()
   return initialized
+}
+
+/** 保存当前个人活动范围后再追加历史，历史失败时不回滚已经应用的训练配置。 */
+export async function persistActivityRangeMeasurement(
+  range: MotionRange,
+  source: ActivityRangeHistorySource,
+): Promise<MotionProfile> {
+  return saveActivityRangeMeasurement(range, source, motionProfileService, activityRangeHistoryService)
 }
 
 /** 将任意正式游戏结果连同当时配置写入同一个历史仓库。 */

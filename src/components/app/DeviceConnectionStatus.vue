@@ -41,7 +41,7 @@ function reconnect(): void { open.value = false; void connectionManager.reconnec
 function switchDevice(): void { open.value = false; showSwitchDialog.value = true }
 async function forget(): Promise<void> {
   open.value = false
-  if (!window.confirm('确认忘记当前训练设备吗？\n\n忘记后，下次训练需要重新选择设备。个人 ROM 和训练历史不会被删除。')) return
+  if (!window.confirm('确认忘记当前训练设备吗？\n\n忘记后，下次训练需要重新选择设备。个人活动范围和训练历史不会被删除。')) return
   try { await connectionManager.forgetCurrentDevice() }
   catch (error) { errorMessage.value = error instanceof Error ? error.message : String(error) }
 }

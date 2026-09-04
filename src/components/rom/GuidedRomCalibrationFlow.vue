@@ -264,7 +264,7 @@ function illustrationMode(currentPhase: GuidedRomPhase): 'center' | 'return-cent
 
     <template v-else-if="phase === 'cancel-confirm'">
       <h2>确认退出个人活动范围测量？</h2>
-      <p class="rom-copy">当前未保存的测量结果将被清除，已经保存的个人 ROM 不会受到影响。</p>
+      <p class="rom-copy">当前未保存的测量结果将被清除，已经保存的个人活动范围不会受到影响。</p>
       <div class="rom-confirm-actions">
         <button class="button" @click="continueAfterCancel">继续测量</button>
         <button class="button danger" @click="confirmCancel">退出</button>

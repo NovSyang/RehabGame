@@ -364,6 +364,19 @@
 - [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
 - [ ] Windows / Android 对比实时训练、动态回放和完整轨迹的四方向距离、半径比例与路径形状
 
+### 个人活动范围历史与趋势
+
+- [x] 使用独立 `rehab.activity-range-history.v1` 存储历次完整测量事实，不修改当前 MotionProfile 或训练历史 Schema
+- [x] 首次设置与 Settings 重测统一按“保存并应用 Profile → 追加历史”顺序执行，历史失败不回滚当前配置
+- [x] 按 Profile、测量时间和实测范围精确去重，并提供页面倒序与趋势时间正序数据
+- [x] 应用启动后台恢复旧训练记录中的 Profile 快照和未覆盖的当前实测 Profile，不阻塞训练与连接
+- [x] Settings 增加历史入口，历史页提供最新四方向摘要、中性差值、SVG 时间趋势、桌面表格与手机卡片
+- [x] 正式用户界面统一使用“个人活动范围 / 实测活动范围 / 训练活动范围”术语
+- [x] 旧训练快照去重、损坏数据过滤及当前实测 Profile 补录自动测试通过
+- [x] 59 个测试文件、245 项单元测试、`npm run build` 与 Android Debug APK 构建通过
+- [ ] 当前验证进程未注入 Tauri Updater 私钥，需在签名环境中补跑 `npm run tauri:build`
+- [ ] Windows / Android 实机完成首次测量、设置重测、重启恢复、旧训练快照恢复和响应式趋势验收
+
 ### 框架与训练流程
 
 - [x] `GameDefinition` 增加封面、预计时长、玩法说明和版本化交互引导

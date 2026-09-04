@@ -3,8 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DeviceConnectionPanel from '../components/device/DeviceConnectionPanel.vue'
 import GuidedRomCalibrationFlow from '../components/rom/GuidedRomCalibrationFlow.vue'
-import { motionProfileService, sensorService, updateInstallGuard } from '../app/AppServices'
-import { profileFromMeasuredRange } from '../core/motion/MotionProfile'
+import { persistActivityRangeMeasurement, sensorService, updateInstallGuard } from '../app/AppServices'
 import type { MotionRange } from '../core/motion/MotionConfig'
 
 const router = useRouter()
@@ -14,7 +13,7 @@ let unsubscribe: (() => void) | null = null
 let releaseUpdateLock: (() => void) | null = null
 let initialConnectionChecked = false
 
-// 首次进入页面时允许已恢复的连接自动前进；取消 ROM 后则必须由用户再次点击继续。
+// 首次进入页面时允许已恢复的连接自动前进；取消测量后则必须由用户再次点击继续。
 onMounted(() => {
   releaseUpdateLock = updateInstallGuard.acquire('first-run-setup')
   unsubscribe = sensorService.onSnapshot((snapshot) => {
@@ -27,7 +26,7 @@ onMounted(() => {
 onBeforeUnmount(() => { unsubscribe?.(); releaseUpdateLock?.() })
 function deviceConnected(): void { errorMessage.value = ''; step.value = 'guided-rom' }
 async function persistRom(range: MotionRange): Promise<void> {
-  await motionProfileService.save(profileFromMeasuredRange(range, motionProfileService.getCurrent()))
+  await persistActivityRangeMeasurement(range, 'first-run')
   await router.replace('/games')
 }
 function cancelRom(): void { step.value = 'device' }
